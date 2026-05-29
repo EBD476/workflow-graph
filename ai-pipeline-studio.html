@@ -1,0 +1,1724 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Model Pipeline - Interactive Editor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --accent-primary: #6366f1;
+            --accent-secondary: #8b5cf6;
+            --accent-success: #10b981;
+            --accent-warning: #f59e0b;
+            --accent-danger: #ef4444;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border-color: #475569;
+            --gradient-1: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+            --gradient-2: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        header {
+            background: var(--gradient-2);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1.5rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--gradient-1);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+
+        .logo h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: var(--gradient-1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn {
+            padding: 0.625rem 1.25rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: var(--gradient-1);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: var(--border-color);
+        }
+
+        .main-container {
+            display: flex;
+            height: calc(100vh - 80px);
+        }
+
+        .sidebar {
+            width: 280px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border-color);
+            padding: 1.5rem;
+            overflow-y: auto;
+        }
+
+        .sidebar h2 {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+            margin-bottom: 1rem;
+        }
+
+        .pipeline-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .pipeline-step {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.875rem 1rem;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .pipeline-step:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .pipeline-step.active {
+            background: var(--accent-primary);
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+        }
+
+        .pipeline-step.completed .step-icon {
+            background: var(--accent-success);
+        }
+
+        .step-number {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--bg-tertiary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .pipeline-step.active .step-number {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .step-info {
+            flex: 1;
+        }
+
+        .step-info h3 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 0.125rem;
+        }
+
+        .step-info p {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .pipeline-step.active .step-info p {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .step-connector {
+            width: 2px;
+            height: 20px;
+            background: var(--border-color);
+            margin-left: 1.375rem;
+        }
+
+        .step-connector.completed {
+            background: var(--accent-success);
+        }
+
+        .content-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .step-header {
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid var(--border-color);
+            background: var(--bg-secondary);
+        }
+
+        .step-header h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .step-header p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .editor-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .editor-tabs {
+            display: flex;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            padding: 0 1rem;
+        }
+
+        .editor-tab {
+            padding: 0.75rem 1.25rem;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s ease;
+        }
+
+        .editor-tab:hover {
+            color: var(--text-primary);
+        }
+
+        .editor-tab.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+
+        .editor-wrapper {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        .code-editor {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .editor-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.75rem 1rem;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .editor-filename {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .editor-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .editor-btn {
+            padding: 0.375rem 0.75rem;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .editor-btn-run {
+            background: var(--accent-success);
+            color: white;
+        }
+
+        .editor-btn-run:hover {
+            background: #059669;
+        }
+
+        .editor-btn-copy {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .editor-btn-copy:hover {
+            background: var(--border-color);
+        }
+
+        textarea.code-input {
+            flex: 1;
+            background: #0d1117;
+            color: #e6edf3;
+            border: none;
+            padding: 1rem;
+            font-family: 'Fira Code', 'Consolas', 'Monaco', monospace;
+            font-size: 0.875rem;
+            line-height: 1.6;
+            resize: none;
+            outline: none;
+            tab-size: 4;
+        }
+
+        .output-panel {
+            width: 400px;
+            border-left: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-primary);
+        }
+
+        .output-header {
+            padding: 0.75rem 1rem;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .output-content {
+            flex: 1;
+            padding: 1rem;
+            overflow-y: auto;
+            font-family: 'Fira Code', 'Consolas', 'Monaco', monospace;
+            font-size: 0.8rem;
+            line-height: 1.6;
+            color: var(--text-secondary);
+        }
+
+        .output-content .success {
+            color: var(--accent-success);
+        }
+
+        .output-content .error {
+            color: var(--accent-danger);
+        }
+
+        .output-content .info {
+            color: var(--accent-primary);
+        }
+
+        .output-content .warning {
+            color: var(--accent-warning);
+        }
+
+        .progress-bar {
+            padding: 1rem 2rem;
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border-color);
+        }
+
+        .progress-track {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.75rem;
+        }
+
+        .progress-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .progress-percentage {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--accent-primary);
+        }
+
+        .progress-bar-track {
+            height: 6px;
+            background: var(--bg-tertiary);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: var(--gradient-1);
+            border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            padding: 1.5rem 2rem;
+        }
+
+        .stat-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1rem;
+        }
+
+        .stat-card h4 {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-card .value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: var(--gradient-1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-card .subtext {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .visual-flow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 1.5rem 2rem;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .flow-node {
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            transition: all 0.3s ease;
+        }
+
+        .flow-node.active {
+            background: var(--accent-primary);
+            color: white;
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
+        }
+
+        .flow-node.completed {
+            background: var(--accent-success);
+            color: white;
+        }
+
+        .flow-arrow {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .running {
+            animation: pulse 1s infinite;
+        }
+
+        @media (max-width: 1024px) {
+            .output-panel {
+                width: 300px;
+            }
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-container {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+            }
+            .pipeline-steps {
+                flex-direction: row;
+                overflow-x: auto;
+            }
+            .step-connector {
+                display: none;
+            }
+            .output-panel {
+                width: 100%;
+                border-left: none;
+                border-top: 1px solid var(--border-color);
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <div class="logo-icon">&#9881;</div>
+            <h1>AI Pipeline Studio</h1>
+        </div>
+        <div class="header-actions">
+            <button class="btn btn-secondary" onclick="resetPipeline()">&#8634; Reset</button>
+            <button class="btn btn-primary" onclick="runFullPipeline()">&#9654; Run Pipeline</button>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <aside class="sidebar">
+            <h2>Pipeline Steps</h2>
+            <div class="pipeline-steps" id="pipelineSteps"></div>
+        </aside>
+
+        <main class="content-area">
+            <div class="visual-flow" id="visualFlow"></div>
+
+            <div class="step-header" id="stepHeader">
+                <h2 id="stepTitle">Data Collection</h2>
+                <p id="stepDescription">Gather and ingest data from various sources</p>
+            </div>
+
+            <div class="stats-grid" id="statsGrid"></div>
+
+            <div class="editor-container">
+                <div class="editor-tabs" id="editorTabs"></div>
+                <div class="editor-wrapper">
+                    <div class="code-editor">
+                        <div class="editor-header">
+                            <div class="editor-filename">
+                                <span>&#128196;</span>
+                                <span id="editorFilename">data_collection.py</span>
+                            </div>
+                            <div class="editor-actions">
+                                <button class="editor-btn editor-btn-copy" onclick="copyCode()">&#128203; Copy</button>
+                                <button class="editor-btn editor-btn-run" onclick="runCode()">&#9654; Run</button>
+                            </div>
+                        </div>
+                        <textarea class="code-input" id="codeEditor" spellcheck="false"></textarea>
+                    </div>
+                    <div class="output-panel">
+                        <div class="output-header">&#128196; Output</div>
+                        <div class="output-content" id="outputContent">
+                            <span class="info">// Click "Run" to execute the code...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="progress-bar">
+                <div class="progress-track">
+                    <span class="progress-label">Pipeline Progress</span>
+                    <span class="progress-percentage" id="progressPercentage">0%</span>
+                </div>
+                <div class="progress-bar-track">
+                    <div class="progress-bar-fill" id="progressFill" style="width: 0%"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const pipelineData = [
+            {
+                id: 'data-collection',
+                name: 'Data Collection',
+                description: 'Gather and ingest data from APIs, databases, and files',
+                stats: [
+                    { label: 'Sources', value: '5', subtext: 'Active connections' },
+                    { label: 'Records', value: '1.2M', subtext: 'Total ingested' },
+                    { label: 'Size', value: '4.8 GB', subtext: 'Raw data' },
+                    { label: 'Status', value: 'Ready', subtext: 'All sources synced' }
+                ],
+                tabs: [
+                    { name: 'Scraper', filename: 'data_scraper.py', code: `import requests
+import pandas as pd
+from bs4 import BeautifulSoup
+import json
+from datetime import datetime
+
+class DataCollector:
+    def __init__(self, config):
+        self.config = config
+        self.session = requests.Session()
+        self.session.headers.update({
+            'User-Agent': 'AI-Pipeline/1.0'
+        })
+    
+    def fetch_from_api(self, endpoint, params=None):
+        """Fetch data from REST API"""
+        response = self.session.get(
+            f"{self.config['api_base']}/{endpoint}",
+            params=params,
+            headers={'Authorization': f"Bearer {self.config['api_key']}"}
+        )
+        response.raise_for_status()
+        return response.json()
+    
+    def scrape_web(self, urls):
+        """Scrape data from web pages"""
+        data = []
+        for url in urls:
+            response = self.session.get(url)
+            soup = BeautifulSoup(response.text, 'html.parser')
+            data.append({
+                'url': url,
+                'title': soup.title.string,
+                'content': soup.get_text()[:1000],
+                'timestamp': datetime.now().isoformat()
+            })
+        return pd.DataFrame(data)
+    
+    def load_csv(self, file_path):
+        """Load data from CSV files"""
+        df = pd.read_csv(file_path)
+        print(f"Loaded {len(df)} records from {file_path}")
+        return df
+    
+    def collect_all(self):
+        """Main collection orchestration"""
+        print("Starting data collection...")
+        
+        api_data = self.fetch_from_api('datasets/latest')
+        web_data = self.scrape_web(self.config['target_urls'])
+        csv_data = self.load_csv('data/raw_dataset.csv')
+        
+        combined = {
+            'api': api_data,
+            'web': web_data,
+            'csv': csv_data,
+            'collected_at': datetime.now().isoformat()
+        }
+        
+        with open('data/collected.json', 'w') as f:
+            json.dump(combined, f, indent=2)
+        
+        print(f"Collection complete: {len(combined)} sources")
+        return combined
+
+config = {
+    'api_base': 'https://api.example.com',
+    'api_key': 'your-api-key',
+    'target_urls': ['https://example.com/data1', 'https://example.com/data2']
+}
+
+collector = DataCollector(config)
+result = collector.collect_all()` },
+                    { name: 'Config', filename: 'pipeline_config.yaml', code: `# Pipeline Configuration
+data_collection:
+  sources:
+    - type: api
+      endpoint: "https://api.example.com/v2/datasets"
+      method: GET
+      auth: bearer_token
+      rate_limit: 100/minute
+      
+    - type: database
+      connection: "postgresql://user:pass@db:5432/analytics"
+      query: "SELECT * FROM training_data WHERE created_at > :last_run"
+      
+    - type: file_storage
+      path: "s3://my-bucket/raw-data/"
+      pattern: "*.csv"
+      
+    - type: web_scraping
+      urls:
+        - "https://public-data.example.com/dataset1"
+        - "https://public-data.example.com/dataset2"
+      selectors:
+        table: "data-table"
+        rows: "tr.data-row"
+        
+  storage:
+    raw_path: "data/raw/"
+    processed_path: "data/processed/"
+    format: parquet
+    
+  schedule:
+    frequency: "daily"
+    time: "02:00 UTC"
+    retry: 3
+    timeout: 3600` }
+                ],
+                output: `Starting data collection...
+Loaded 850,000 records from data/raw_dataset.csv
+Fetched 350,000 records from API
+Scraped 2 web sources successfully
+<span class="success">Collection complete: 3 sources merged</span>
+<span class="info">Total records: 1,200,000</span>
+<span class="info">Storage: data/collected.json (4.8 GB)</span>
+<span class="success">Data collection pipeline finished successfully!</span>`
+            },
+            {
+                id: 'preprocessing',
+                name: 'Preprocessing',
+                description: 'Clean, transform, and prepare data for training',
+                stats: [
+                    { label: 'Missing Values', value: '2.3%', subtext: 'Imputed' },
+                    { label: 'Features', value: '47', subtext: 'After engineering' },
+                    { label: 'Outliers', value: '1,240', subtext: 'Removed' },
+                    { label: 'Quality', value: '98.5%', subtext: 'Data quality score' }
+                ],
+                tabs: [
+                    { name: 'Clean', filename: 'preprocess.py', code: `import pandas as pd
+import numpy as np
+from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.impute import SimpleImputer
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+
+class DataPreprocessor:
+    def __init__(self):
+        self.numeric_features = ['age', 'income', 'score', 'count']
+        self.categorical_features = ['category', 'region', 'type']
+        
+        self.numeric_transformer = Pipeline(steps=[
+            ('imputer', SimpleImputer(strategy='median')),
+            ('scaler', StandardScaler())
+        ])
+        
+        self.categorical_transformer = Pipeline(steps=[
+            ('imputer', SimpleImputer(strategy='most_frequent')),
+            ('encoder', LabelEncoder())
+        ])
+        
+        self.preprocessor = ColumnTransformer(
+            transformers=[
+                ('num', self.numeric_transformer, self.numeric_features),
+                ('cat', self.categorical_transformer, self.categorical_features)
+            ])
+    
+    def remove_outliers(self, df, columns, threshold=3):
+        """Remove outliers using Z-score"""
+        mask = pd.Series(True, index=df.index)
+        for col in columns:
+            z_scores = np.abs((df[col] - df[col].mean()) / df[col].std())
+            mask &= (z_scores < threshold)
+        removed = (~mask).sum()
+        print(f"Removed {removed} outliers")
+        return df[mask]
+    
+    def feature_engineering(self, df):
+        """Create new features from existing data"""
+        df['age_group'] = pd.cut(df['age'], bins=[0, 18, 35, 50, 65, 100])
+        df['income_per_capita'] = df['income'] / df['count']
+        df['score_normalized'] = (df['score'] - df['score'].min()) / \
+                                  (df['score'].max() - df['score'].min())
+        return df
+    
+    def preprocess(self, raw_data):
+        """Full preprocessing pipeline"""
+        df = raw_data.copy()
+        
+        print(f"Initial shape: {df.shape}")
+        print(f"Missing values: {df.isnull().sum().sum()}")
+        
+        df = self.remove_outliers(df, self.numeric_features)
+        df = self.feature_engineering(df)
+        
+        X = df.drop('target', axis=1)
+        y = df['target']
+        
+        X_processed = self.preprocessor.fit_transform(X)
+        
+        print(f"Processed shape: {X_processed.shape}")
+        print(f"Features: {X_processed.shape[1]}")
+        
+        return X_processed, y
+
+preprocessor = DataPreprocessor()
+X_train, y_train = preprocessor.preprocess(raw_data)` },
+                    { name: 'Validation', filename: 'data_validation.py', code: `import pandas as pd
+from great_expectations import DataContext
+from scipy import stats
+
+class DataValidator:
+    def __init__(self):
+        self.checks = []
+    
+    def check_missing_values(self, df, threshold=0.05):
+        """Check for excessive missing values"""
+        missing_pct = df.isnull().sum() / len(df)
+        cols_with_excessive_missing = missing_pct[missing_pct > threshold]
+        
+        if len(cols_with_excessive_missing) > 0:
+            print(f"WARNING: Columns with >{threshold*100}% missing:")
+            for col, pct in cols_with_excessive_missing.items():
+                print(f"  {col}: {pct:.2%}")
+        return len(cols_with_excessive_missing) == 0
+    
+    def check_distribution(self, df, column, expected_dist='normal'):
+        """Statistical distribution check"""
+        if expected_dist == 'normal':
+            stat, p_value = stats.normaltest(df[column].dropna())
+            is_normal = p_value > 0.05
+            print(f"Normality test for {column}: p={p_value:.4f} {'PASS' if is_normal else 'FAIL'}")
+            return is_normal
+    
+    def check_data_types(self, df, expected_types):
+        """Validate column data types"""
+        for col, expected_type in expected_types.items():
+            actual_type = str(df[col].dtype)
+            match = expected_type in actual_type
+            status = "PASS" if match else "FAIL"
+            print(f"Type check {col}: expected={expected_type}, actual={actual_type} [{status}]")
+    
+    def run_all_checks(self, df):
+        """Execute all validation checks"""
+        print("=" * 50)
+        print("DATA VALIDATION REPORT")
+        print("=" * 50)
+        
+        self.check_missing_values(df)
+        self.check_data_types(df, {
+            'age': 'int',
+            'income': 'float',
+            'category': 'object'
+        })
+        
+        print("=" * 50)
+        print("Validation complete!")
+
+validator = DataValidator()
+validator.run_all_checks(df)` }
+                ],
+                output: `Initial shape: (1200000, 42)
+Missing values: 27600
+Removed 1,240 outliers
+Created 5 new features
+<span class="info">Feature engineering complete</span>
+Processed shape: (1198760, 47)
+Features: 47
+<span class="success">Preprocessing pipeline finished successfully!</span>
+<span class="info">Data saved to: data/processed/training_data.parquet</span>`
+            },
+            {
+                id: 'model-selection',
+                name: 'Model Selection',
+                description: 'Choose and configure the optimal ML model architecture',
+                stats: [
+                    { label: 'Candidates', value: '6', subtext: 'Models evaluated' },
+                    { label: 'Best Model', value: 'XGB', subtext: 'XGBoost Classifier' },
+                    { label: 'CV Score', value: '0.947', subtext: 'Cross-validation' },
+                    { label: 'Params', value: '12', subtext: 'Hyperparameters' }
+                ],
+                tabs: [
+                    { name: 'Models', filename: 'model_selection.py', code: `from sklearn.model_selection import cross_val_score, GridSearchCV
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
+from sklearn.svm import SVC
+from sklearn.linear_model import LogisticRegression
+from xgboost import XGBClassifier
+from lightgbm import LGBMClassifier
+import json
+
+class ModelSelector:
+    def __init__(self, X_train, y_train):
+        self.X_train = X_train
+        self.y_train = y_train
+        self.models = {}
+        self.results = {}
+    
+    def initialize_models(self):
+        """Initialize candidate models"""
+        self.models = {
+            'Logistic Regression': LogisticRegression(
+                max_iter=1000, random_state=42
+            ),
+            'Random Forest': RandomForestClassifier(
+                n_estimators=100, random_state=42, n_jobs=-1
+            ),
+            'XGBoost': XGBClassifier(
+                n_estimators=100, random_state=42, 
+                eval_metric='logloss', use_label_encoder=False
+            ),
+            'LightGBM': LGBMClassifier(
+                n_estimators=100, random_state=42, verbose=-1
+            ),
+            'Gradient Boosting': GradientBoostingClassifier(
+                n_estimators=100, random_state=42
+            ),
+            'SVM': SVC(kernel='rbf', random_state=42, probability=True)
+        }
+    
+    def evaluate_models(self, cv=5):
+        """Cross-validate all models"""
+        print("Evaluating models with {}-fold CV...".format(cv))
+        print("-" * 50)
+        
+        for name, model in self.models.items():
+            scores = cross_val_score(
+                model, self.X_train, self.y_train,
+                cv=cv, scoring='accuracy'
+            )
+            self.results[name] = {
+                'mean_score': scores.mean(),
+                'std_score': scores.std(),
+                'scores': scores.tolist()
+            }
+            print(f"{name}: {scores.mean():.4f} (+/- {scores.std():.4f})")
+        
+        best_model = max(self.results, key=lambda x: self.results[x]['mean_score'])
+        print("-" * 50)
+        print(f"Best model: {best_model} ({self.results[best_model]['mean_score']:.4f})")
+        return best_model
+    
+    def tune_hyperparameters(self, model_name):
+        """Grid search for best hyperparameters"""
+        param_grids = {
+            'XGBoost': {
+                'n_estimators': [100, 200, 300],
+                'max_depth': [3, 5, 7],
+                'learning_rate': [0.01, 0.1, 0.2],
+                'subsample': [0.8, 0.9, 1.0]
+            },
+            'Random Forest': {
+                'n_estimators': [100, 200, 500],
+                'max_depth': [10, 20, None],
+                'min_samples_split': [2, 5, 10]
+            }
+        }
+        
+        model = self.models[model_name]
+        grid_search = GridSearchCV(
+            model, param_grids[model_name],
+            cv=3, scoring='accuracy', n_jobs=-1
+        )
+        grid_search.fit(self.X_train, self.y_train)
+        
+        print(f"Best parameters: {grid_search.best_params_}")
+        print(f"Best CV score: {grid_search.best_score_:.4f}")
+        
+        return grid_search.best_estimator_, grid_search.best_params_
+
+selector = ModelSelector(X_train, y_train)
+selector.initialize_models()
+best = selector.evaluate_models()
+best_model, best_params = selector.tune_hyperparameters(best)` },
+                    { name: 'Config', filename: 'model_config.json', code: `{
+  "model_selection": {
+    "primary_model": "XGBoost",
+    "fallback_models": ["RandomForest", "LightGBM"],
+    "evaluation_metrics": ["accuracy", "precision", "recall", "f1", "roc_auc"],
+    "cross_validation": {
+      "folds": 5,
+      "shuffle": true,
+      "random_state": 42,
+      "stratified": true
+    },
+    "hyperparameter_tuning": {
+      "method": "grid_search",
+      "cv_folds": 3,
+      "scoring": "accuracy",
+      "refit": true,
+      "n_jobs": -1,
+      "max_parallel": 4
+    },
+    "xgboost_params": {
+      "n_estimators": 200,
+      "max_depth": 5,
+      "learning_rate": 0.1,
+      "subsample": 0.9,
+      "colsample_bytree": 0.8,
+      "min_child_weight": 3,
+      "gamma": 0,
+      "reg_alpha": 0.1,
+      "reg_lambda": 1.0,
+      "scale_pos_weight": 1,
+      "random_state": 42,
+      "eval_metric": "logloss",
+      "early_stopping_rounds": 20
+    }
+  }
+}` }
+                ],
+                output: `Evaluating models with 5-fold CV...
+--------------------------------------------------
+Logistic Regression: 0.8234 (+/- 0.0123)
+Random Forest: 0.9156 (+/- 0.0089)
+XGBoost: 0.9472 (+/- 0.0067)
+LightGBM: 0.9445 (+/- 0.0071)
+Gradient Boosting: 0.9312 (+/- 0.0085)
+SVM: 0.8876 (+/- 0.0145)
+--------------------------------------------------
+<span class="success">Best model: XGBoost (0.9472)</span>
+<span class="info">Tuning hyperparameters for XGBoost...</span>
+Best parameters: {'learning_rate': 0.1, 'max_depth': 5, 'n_estimators': 200, 'subsample': 0.9}
+Best CV score: 0.9523
+<span class="success">Model selection complete!</span>`
+            },
+            {
+                id: 'training',
+                name: 'Training',
+                description: 'Train the selected model with optimized hyperparameters',
+                stats: [
+                    { label: 'Epochs', value: '200', subtext: 'Completed' },
+                    { label: 'Batch Size', value: '256', subtext: 'Training batches' },
+                    { label: 'Loss', value: '0.0234', subtext: 'Final training loss' },
+                    { label: 'Time', value: '14m 32s', subtext: 'Total training time' }
+                ],
+                tabs: [
+                    { name: 'Train', filename: 'train_model.py', code: `import xgboost as xgb
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import classification_report
+import matplotlib.pyplot as plt
+import pickle
+import json
+
+class ModelTrainer:
+    def __init__(self, config):
+        self.config = config
+        self.model = None
+        self.history = {'train_loss': [], 'val_loss': [], 'train_acc': [], 'val_acc': []}
+    
+    def prepare_data(self, X, y):
+        """Split data into train/validation/test sets"""
+        X_temp, X_test, y_temp, y_test = train_test_split(
+            X, y, test_size=0.15, random_state=42, stratify=y
+        )
+        X_train, X_val, y_train, y_val = train_test_split(
+            X_temp, y_temp, test_size=0.176, random_state=42, stratify=y_temp
+        )
+        print(f"Train: {len(X_train)}, Val: {len(X_val)}, Test: {len(X_test)}")
+        return X_train, X_val, X_test, y_train, y_val, y_test
+    
+    def train(self, X_train, y_train, X_val, y_val):
+        """Train XGBoost model with early stopping"""
+        train_dmatrix = xgb.DMatrix(X_train, label=y_train)
+        val_dmatrix = xgb.DMatrix(X_val, label=y_val)
+        
+        params = self.config['xgboost_params']
+        
+        evals = [(train_dmatrix, 'train'), (val_dmatrix, 'validation')]
+        
+        self.model = xgb.train(
+            params,
+            train_dmatrix,
+            num_boost_round=1000,
+            evals=evals,
+            early_stopping_rounds=20,
+            verbose_eval=50
+        )
+        
+        print(f"Best iteration: {self.model.best_iteration}")
+        return self.model
+    
+    def evaluate(self, X_test, y_test):
+        """Evaluate model on test set"""
+        test_dmatrix = xgb.DMatrix(X_test)
+        predictions = self.model.predict(test_dmatrix)
+        predicted_classes = (predictions > 0.5).astype(int)
+        
+        print("Classification Report:")
+        print(classification_report(y_test, predicted_classes))
+        
+        return predictions
+    
+    def save_model(self, path='models/trained_model.pkl'):
+        """Save trained model and artifacts"""
+        with open(path, 'wb') as f:
+            pickle.dump(self.model, f)
+        print(f"Model saved to {path}")
+        
+        model_info = {
+            'type': 'XGBoost',
+            'best_iteration': int(self.model.best_iteration),
+            'best_score': float(self.model.best_score),
+            'num_features': self.model.num_features()
+        }
+        
+        with open('models/model_info.json', 'w') as f:
+            json.dump(model_info, f, indent=2)
+
+trainer = ModelTrainer(config)
+X_tr, X_val, X_te, y_tr, y_val, y_te = trainer.prepare_data(X, y)
+trainer.train(X_tr, y_tr, X_val, y_val)
+trainer.evaluate(X_te, y_te)
+trainer.save_model()` },
+                    { name: 'Callbacks', filename: 'training_callbacks.py', code: `import time
+import logging
+from datetime import datetime
+
+class TrainingCallbacks:
+    def __init__(self):
+        self.callbacks = []
+        self.start_time = None
+    
+    def on_train_begin(self, logs=None):
+        self.start_time = time.time()
+        print("Training started at:", datetime.now().strftime("%H:%M:%S"))
+        for cb in self.callbacks:
+            cb.on_train_begin(logs)
+    
+    def on_epoch_end(self, epoch, logs=None):
+        elapsed = time.time() - self.start_time
+        eta = elapsed / (epoch + 1) * (200 - epoch - 1)
+        
+        print(f"Epoch {epoch+1}/200 - ", end="")
+        print(f"loss: {logs.get('loss', 0):.4f} - ", end="")
+        print(f"val_loss: {logs.get('val_loss', 0):.4f} - ", end="")
+        print(f"acc: {logs.get('accuracy', 0):.4f} - ", end="")
+        print(f"val_acc: {logs.get('val_accuracy', 0):.4f} - ", end="")
+        print(f"ETA: {eta:.0f}s")
+        
+        for cb in self.callbacks:
+            cb.on_epoch_end(epoch, logs)
+    
+    def on_train_end(self, logs=None):
+        total_time = time.time() - self.start_time
+        print(f"Training completed in {total_time:.2f}s")
+        for cb in self.callbacks:
+            cb.on_train_end(logs)
+
+class EarlyStopping:
+    def __init__(self, monitor='val_loss', patience=20):
+        self.monitor = monitor
+        self.patience = patience
+        self.best = float('inf')
+        self.wait = 0
+        self.stopped_epoch = 0
+    
+    def on_epoch_end(self, epoch, logs=None):
+        current = logs.get(self.monitor)
+        if current < self.best:
+            self.best = current
+            self.wait = 0
+        else:
+            self.wait += 1
+            if self.wait >= self.patience:
+                self.stopped_epoch = epoch
+                print(f"Early stopping at epoch {epoch}")
+
+class ModelCheckpoint:
+    def __init__(self, filepath='models/best_model.h5'):
+        self.filepath = filepath
+    
+    def on_epoch_end(self, epoch, logs=None):
+        if logs.get('val_loss', float('inf')) < self.best_val:
+            self.best_val = logs['val_loss']
+            print(f"Saving best model to {self.filepath}")
+
+callbacks = TrainingCallbacks()
+callbacks.callbacks.append(EarlyStopping(patience=20))
+callbacks.callbacks.append(ModelCheckpoint())` }
+                ],
+                output: `Train: 850,000, Val: 180,000, Test: 168,760
+<span class="info">[0]  train-logloss:0.6932  validation-logloss:0.6945</span>
+<span class="info">[50] train-logloss:0.1234  validation-logloss:0.1289</span>
+<span class="info">[100] train-logloss:0.0456  validation-logloss:0.0523</span>
+<span class="info">[150] train-logloss:0.0289  validation-logloss:0.0367</span>
+<span class="info">[180] train-logloss:0.0234  validation-logloss:0.0312</span>
+<span class="success">Best iteration: 185</span>
+Classification Report:
+              precision    recall  f1-score   support
+           0       0.95      0.96      0.95     84380
+           1       0.96      0.95      0.95     84380
+    accuracy                           0.95    168760
+<span class="success">Model saved to models/trained_model.pkl</span>
+<span class="success">Training complete!</span>`
+            },
+            {
+                id: 'evaluation',
+                name: 'Evaluation',
+                description: 'Validate model performance and generate metrics reports',
+                stats: [
+                    { label: 'Accuracy', value: '95.2%', subtext: 'Overall accuracy' },
+                    { label: 'F1 Score', value: '0.951', subtext: 'Weighted average' },
+                    { label: 'AUC-ROC', value: '0.983', subtext: 'Area under curve' },
+                    { label: 'Inference', value: '2.3ms', subtext: 'Avg prediction time' }
+                ],
+                tabs: [
+                    { name: 'Metrics', filename: 'evaluate.py', code: `import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.metrics import (
+    accuracy_score, precision_score, recall_score, f1_score,
+    roc_auc_score, confusion_matrix, classification_report,
+    roc_curve, precision_recall_curve
+)
+import pickle
+import json
+
+class ModelEvaluator:
+    def __init__(self, model_path='models/trained_model.pkl'):
+        with open(model_path, 'rb') as f:
+            self.model = pickle.load(f)
+        self.results = {}
+    
+    def compute_metrics(self, y_true, y_pred, y_prob):
+        """Compute comprehensive evaluation metrics"""
+        metrics = {
+            'accuracy': accuracy_score(y_true, y_pred),
+            'precision_macro': precision_score(y_true, y_pred, average='macro'),
+            'precision_weighted': precision_score(y_true, y_pred, average='weighted'),
+            'recall_macro': recall_score(y_true, y_pred, average='macro'),
+            'recall_weighted': recall_score(y_true, y_pred, average='weighted'),
+            'f1_macro': f1_score(y_true, y_pred, average='macro'),
+            'f1_weighted': f1_score(y_true, y_pred, average='weighted'),
+            'roc_auc': roc_auc_score(y_true, y_prob)
+        }
+        return metrics
+    
+    def plot_confusion_matrix(self, y_true, y_pred):
+        """Generate confusion matrix visualization"""
+        cm = confusion_matrix(y_true, y_pred)
+        plt.figure(figsize=(8, 6))
+        sns.heatmap(cm, annot=True, fmt='d', cmap='Blues',
+                   xticklabels=['Negative', 'Positive'],
+                   yticklabels=['Negative', 'Positive'])
+        plt.title('Confusion Matrix')
+        plt.ylabel('True Label')
+        plt.xlabel('Predicted Label')
+        plt.savefig('reports/confusion_matrix.png', dpi=150)
+        plt.close()
+    
+    def plot_roc_curve(self, y_true, y_prob):
+        """Plot ROC curve"""
+        fpr, tpr, thresholds = roc_curve(y_true, y_prob)
+        auc = roc_auc_score(y_true, y_prob)
+        
+        plt.figure(figsize=(8, 6))
+        plt.plot(fpr, tpr, label=f'AUC = {auc:.4f}')
+        plt.plot([0, 1], [0, 1], 'k--', label='Random')
+        plt.xlabel('False Positive Rate')
+        plt.ylabel('True Positive Rate')
+        plt.title('ROC Curve')
+        plt.legend()
+        plt.savefig('reports/roc_curve.png', dpi=150)
+        plt.close()
+    
+    def full_evaluation(self, X_test, y_test):
+        """Run complete evaluation suite"""
+        import xgboost as xgb
+        test_dmatrix = xgb.DMatrix(X_test)
+        y_prob = self.model.predict(test_dmatrix)
+        y_pred = (y_prob > 0.5).astype(int)
+        
+        self.results = self.compute_metrics(y_test, y_pred, y_prob)
+        
+        print("EVALUATION RESULTS")
+        print("=" * 40)
+        for metric, value in self.results.items():
+            print(f"{metric}: {value:.4f}")
+        print("=" * 40)
+        
+        self.plot_confusion_matrix(y_test, y_pred)
+        self.plot_roc_curve(y_test, y_prob)
+        
+        with open('reports/evaluation_metrics.json', 'w') as f:
+            json.dump(self.results, f, indent=2)
+        
+        return self.results
+
+evaluator = ModelEvaluator()
+results = evaluator.full_evaluation(X_test, y_test)` },
+                    { name: 'Analysis', filename: 'error_analysis.py', code: `import pandas as pd
+import numpy as np
+from sklearn.metrics import confusion_matrix
+
+class ErrorAnalyzer:
+    def __init__(self, model, X_test, y_test, y_pred):
+        self.model = model
+        self.X_test = X_test
+        self.y_test = y_test
+        self.y_pred = y_pred
+    
+    def analyze_errors(self):
+        """Analyze false positives and false negatives"""
+        false_positives = np.where((self.y_test == 0) & (self.y_pred == 1))[0]
+        false_negatives = np.where((self.y_test == 1) & (self.y_pred == 0))[0]
+        
+        print(f"False Positives: {len(false_positives)}")
+        print(f"False Negatives: {len(false_negatives)}")
+        
+        return false_positives, false_negatives
+    
+    def feature_importance(self, top_n=10):
+        """Get feature importance from model"""
+        importance = self.model.get_score(importance_type='gain')
+        sorted_features = sorted(importance.items(), 
+                                  key=lambda x: x[1], reverse=True)[:top_n]
+        
+        print("Top Feature Importance:")
+        for i, (feature, score) in enumerate(sorted_features, 1):
+            print(f"  {i}. {feature}: {score:.2f}")
+        
+        return sorted_features
+    
+    def prediction_confidence(self):
+        """Analyze prediction confidence distribution"""
+        import xgboost as xgb
+        test_dmatrix = xgb.DMatrix(self.X_test)
+        probs = self.model.predict(test_dmatrix)
+        
+        confident = np.sum((probs > 0.9) | (probs < 0.1))
+        uncertain = np.sum((probs > 0.4) & (probs < 0.6))
+        
+        print(f"Confident predictions (>90%): {confident} ({confident/len(probs):.1%})")
+        print(f"Uncertain predictions (40-60%): {uncertain} ({uncertain/len(probs):.1%})")
+
+analyzer = ErrorAnalyzer(model, X_test, y_test, y_pred)
+analyzer.analyze_errors()
+analyzer.feature_importance()
+analyzer.prediction_confidence()` }
+                ],
+                output: `EVALUATION RESULTS
+========================================
+accuracy: 0.9523
+precision_macro: 0.9521
+precision_weighted: 0.9523
+recall_macro: 0.9518
+recall_weighted: 0.9523
+f1_macro: 0.9519
+f1_weighted: 0.9523
+roc_auc: 0.9834
+========================================
+<span class="info">Confusion matrix saved to reports/confusion_matrix.png</span>
+<span class="info">ROC curve saved to reports/roc_curve.png</span>
+
+<span class="info">Error Analysis:</span>
+False Positives: 3,872
+False Negatives: 4,028
+
+<span class="info">Top Feature Importance:</span>
+  1. income: 1247.83
+  2. score_normalized: 982.45
+  3. age: 756.21
+  4. category: 534.67
+  5. count: 412.89
+
+<span class="success">Evaluation complete! All metrics exceed thresholds.</span>`
+            },
+            {
+                id: 'deployment',
+                name: 'Deployment',
+                description: 'Deploy model to production with monitoring and scaling',
+                stats: [
+                    { label: 'Endpoint', value: 'Live', subtext: 'API serving' },
+                    { label: 'Latency', value: '12ms', subtext: 'p95 response' },
+                    { label: 'Requests', value: '1.2K/s', subtext: 'Current throughput' },
+                    { label: 'Uptime', value: '99.97%', subtext: 'Last 30 days' }
+                ],
+                tabs: [
+                    { name: 'API', filename: 'api_server.py', code: `from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel, Field
+import xgboost as xgb
+import pickle
+import numpy as np
+import time
+from typing import List, Optional
+import logging
+
+app = FastAPI(
+    title="AI Model API",
+    description="Production ML inference endpoint",
+    version="1.0.0"
+)
+
+class PredictionRequest(BaseModel):
+    features: List[float] = Field(..., description="Input features")
+    metadata: Optional[dict] = Field(None, description="Request metadata")
+
+class PredictionResponse(BaseModel):
+    prediction: int
+    probability: float
+    confidence: str
+    inference_time_ms: float
+    request_id: str
+
+class ModelService:
+    def __init__(self, model_path):
+        with open(model_path, 'rb') as f:
+            self.model = pickle.load(f)
+        self.prediction_count = 0
+        self.start_time = time.time()
+    
+    def predict(self, features):
+        input_array = np.array(features).reshape(1, -1)
+        dmatrix = xgb.DMatrix(input_array)
+        
+        start = time.time()
+        prob = float(self.model.predict(dmatrix)[0])
+        inference_time = (time.time() - start) * 1000
+        
+        prediction = 1 if prob > 0.5 else 0
+        confidence = "high" if abs(prob - 0.5) > 0.3 else "medium" if abs(prob - 0.5) > 0.15 else "low"
+        
+        self.prediction_count += 1
+        
+        return {
+            "prediction": prediction,
+            "probability": round(prob, 4),
+            "confidence": confidence,
+            "inference_time_ms": round(inference_time, 2)
+        }
+
+model_service = ModelService("models/trained_model.pkl")
+
+@app.get("/health")
+def health_check():
+    return {"status": "healthy", "predictions_served": model_service.prediction_count}
+
+@app.post("/predict", response_model=PredictionResponse)
+def predict(request: PredictionRequest):
+    try:
+        result = model_service.predict(request.features)
+        return PredictionResponse(**result, request_id=str(time.time()))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/metrics")
+def get_metrics():
+    uptime = time.time() - model_service.start_time
+    return {
+        "uptime_seconds": uptime,
+        "predictions_served": model_service.prediction_count,
+        "predictions_per_second": model_service.prediction_count / uptime if uptime > 0 else 0
+    }` },
+                    { name: 'Docker', filename: 'Dockerfile', code: `FROM python:3.11-slim
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y \\
+    gcc \\
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY models/ ./models/
+COPY api_server.py .
+COPY monitoring.py .
+
+EXPOSE 8000
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \\
+    CMD curl -f http://localhost:8000/health || exit 1
+
+CMD ["uvicorn", "api_server:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]
+
+---
+# docker-compose.yml
+version: '3.8'
+
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - MODEL_PATH=/app/models/trained_model.pkl
+      - LOG_LEVEL=info
+    volumes:
+      - ./models:/app/models
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
+      replicas: 3
+
+  monitoring:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - monitoring` }
+                ],
+                output: `<span class="info">Building Docker image...</span>
+Step 1/8 : FROM python:3.11-slim
+Step 2/8 : WORKDIR /app
+Step 3/8 : COPY requirements.txt .
+Step 4/8 : RUN pip install --no-cache-dir -r requirements.txt
+Step 5/8 : COPY models/ ./models/
+Step 6/8 : COPY api_server.py .
+Step 7/8 : EXPOSE 8000
+Step 8/8 : CMD ["uvicorn", "api_server:app", "--host", "0.0.0.0", "--port", "8000"]
+<span class="success">Successfully built: ai-model-api:v1.0.0</span>
+
+<span class="info">Starting containers...</span>
+Container api-1: Started (healthy)
+Container api-2: Started (healthy)
+Container api-3: Started (healthy)
+Container monitoring: Started
+Container grafana: Started
+
+<span class="success">Deployment complete!</span>
+<span class="info">API: http://localhost:8000/docs</span>
+<span class="info">Monitoring: http://localhost:3000</span>
+<span class="success">Pipeline execution finished successfully!</span>`
+            }
+        ];
+
+        let currentStep = 0;
+        let currentTab = 0;
+        let completedSteps = new Set();
+
+        function renderPipelineSteps() {
+            const container = document.getElementById('pipelineSteps');
+            container.innerHTML = '';
+            
+            pipelineData.forEach((step, index) => {
+                const isActive = index === currentStep;
+                const isCompleted = completedSteps.has(index);
+                
+                container.innerHTML += `
+                    <div class="pipeline-step ${isActive ? 'active' : ''} ${isCompleted ? 'completed' : ''}" onclick="selectStep(${index})">
+                        <div class="step-number">${isCompleted ? '&#10003;' : index + 1}</div>
+                        <div class="step-info">
+                            <h3>${step.name}</h3>
+                            <p>${step.description.substring(0, 35)}...</p>
+                        </div>
+                    </div>
+                    ${index < pipelineData.length - 1 ? `<div class="step-connector ${isCompleted ? 'completed' : ''}"></div>` : ''}
+                `;
+            });
+        }
+
+        function renderVisualFlow() {
+            const container = document.getElementById('visualFlow');
+            container.innerHTML = '';
+            
+            pipelineData.forEach((step, index) => {
+                const isActive = index === currentStep;
+                const isCompleted = completedSteps.has(index);
+                
+                container.innerHTML += `<div class="flow-node ${isActive ? 'active' : ''} ${isCompleted ? 'completed' : ''}">${step.name}</div>`;
+                
+                if (index < pipelineData.length - 1) {
+                    container.innerHTML += `<span class="flow-arrow">&#10140;</span>`;
+                }
+            });
+        }
+
+        function renderStats() {
+            const container = document.getElementById('statsGrid');
+            const stats = pipelineData[currentStep].stats;
+            
+            container.innerHTML = stats.map(stat => `
+                <div class="stat-card">
+                    <h4>${stat.label}</h4>
+                    <div class="value">${stat.value}</div>
+                    <div class="subtext">${stat.subtext}</div>
+                </div>
+            `).join('');
+        }
+
+        function renderEditorTabs() {
+            const container = document.getElementById('editorTabs');
+            const tabs = pipelineData[currentStep].tabs;
+            
+            container.innerHTML = tabs.map((tab, index) => `
+                <div class="editor-tab ${index === currentTab ? 'active' : ''}" onclick="selectTab(${index})">${tab.name}</div>
+            `).join('');
+        }
+
+        function renderEditor() {
+            const tab = pipelineData[currentStep].tabs[currentTab];
+            document.getElementById('codeEditor').value = tab.code;
+            document.getElementById('editorFilename').textContent = tab.filename;
+            document.getElementById('outputContent').innerHTML = '<span class="info">// Click "Run" to execute the code...</span>';
+        }
+
+        function updateProgress() {
+            const progress = Math.round((completedSteps.size / pipelineData.length) * 100);
+            document.getElementById('progressPercentage').textContent = progress + '%';
+            document.getElementById('progressFill').style.width = progress + '%';
+        }
+
+        function selectStep(index) {
+            currentStep = index;
+            currentTab = 0;
+            
+            document.getElementById('stepTitle').textContent = pipelineData[index].name;
+            document.getElementById('stepDescription').textContent = pipelineData[index].description;
+            
+            renderPipelineSteps();
+            renderVisualFlow();
+            renderStats();
+            renderEditorTabs();
+            renderEditor();
+        }
+
+        function selectTab(index) {
+            currentTab = index;
+            renderEditorTabs();
+            renderEditor();
+        }
+
+        function runCode() {
+            const output = document.getElementById('outputContent');
+            output.innerHTML = '<span class="info running">Executing code...</span>';
+            
+            setTimeout(() => {
+                output.innerHTML = pipelineData[currentStep].output;
+                completedSteps.add(currentStep);
+                updateProgress();
+                renderPipelineSteps();
+                renderVisualFlow();
+            }, 1500);
+        }
+
+        function copyCode() {
+            const code = document.getElementById('codeEditor').value;
+            navigator.clipboard.writeText(code).then(() => {
+                const btn = document.querySelector('.editor-btn-copy');
+                const original = btn.innerHTML;
+                btn.innerHTML = '&#10003; Copied!';
+                setTimeout(() => btn.innerHTML = original, 2000);
+            });
+        }
+
+        function runFullPipeline() {
+            let step = 0;
+            
+            function runNextStep() {
+                if (step >= pipelineData.length) {
+                    return;
+                }
+                
+                selectStep(step);
+                completedSteps.add(step);
+                updateProgress();
+                renderPipelineSteps();
+                renderVisualFlow();
+                
+                const output = document.getElementById('outputContent');
+                output.innerHTML = '<span class="info running">Executing step...</span>';
+                
+                setTimeout(() => {
+                    output.innerHTML = pipelineData[step].output;
+                    step++;
+                    
+                    if (step < pipelineData.length) {
+                        setTimeout(runNextStep, 2000);
+                    }
+                }, 1000);
+            }
+            
+            runNextStep();
+        }
+
+        function resetPipeline() {
+            currentStep = 0;
+            currentTab = 0;
+            completedSteps.clear();
+            selectStep(0);
+            updateProgress();
+        }
+
+        // Handle tab key in editor
+        document.getElementById('codeEditor').addEventListener('keydown', function(e) {
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                const start = this.selectionStart;
+                const end = this.selectionEnd;
+                this.value = this.value.substring(0, start) + '    ' + this.value.substring(end);
+                this.selectionStart = this.selectionEnd = start + 4;
+            }
+        });
+
+        // Initialize
+        renderPipelineSteps();
+        renderVisualFlow();
+        renderStats();
+        renderEditorTabs();
+        renderEditor();
+        updateProgress();
+    </script>
+</body>
+</html>
