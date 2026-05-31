@@ -2241,6 +2241,7 @@ def greet(name):
   let isOpen = false;
   let history = loadHistory();
   let chatAbortController = null;
+  let lastTabTime = 0;
 
   const SCORE_MATCH_CONSECUTIVE = 1.0;
   const SCORE_MATCH_BOUNDARY_UPPER = 0.9;
@@ -4008,6 +4009,19 @@ def greet(name):
     if (e.key === 'Escape' && sidebarOpen) {
       closeSidebar();
       return;
+    }
+    if (e.key === 'Tab' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      const now = Date.now();
+      if (now - lastTabTime < 350) {
+        e.preventDefault();
+        if (isOpen) closeSearch();
+        else openSearch();
+        lastTabTime = 0;
+        return;
+      }
+      lastTabTime = now;
+    } else if (e.key !== 'Tab') {
+      lastTabTime = 0;
     }
     if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'p') {
       e.preventDefault();
