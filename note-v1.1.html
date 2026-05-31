@@ -1657,58 +1657,6 @@
       color: #fff;
     }
 
-    .note-focus-btn {
-      position: absolute;
-      top: 6px;
-      right: 56px;
-      width: 22px;
-      height: 22px;
-      border: none;
-      border-radius: 50%;
-      background: rgba(0,0,0,0.08);
-      color: rgba(0,0,0,0.35);
-      font-size: 11px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      opacity: 0;
-      transition: opacity 0.15s, background 0.15s;
-    }
-
-    .draggable-note:hover .note-focus-btn {
-      opacity: 1;
-    }
-
-    .note-focus-btn:hover {
-      background: rgba(0,0,0,0.15);
-      color: rgba(0,0,0,0.6);
-    }
-
-    .note-focus-btn.active {
-      opacity: 1;
-      background: var(--accent);
-      color: #fff;
-    }
-
-    .draggable-note.dimmed {
-      opacity: 0.08 !important;
-      pointer-events: none !important;
-      transition: opacity 0.35s ease;
-    }
-
-    .draggable-note.dimmed .note-resize-handle {
-      opacity: 0 !important;
-    }
-
-    .draggable-note.focused {
-      z-index: 300 !important;
-      box-shadow:
-        0 4px 16px rgba(0,0,0,0.12),
-        0 16px 48px rgba(0,0,0,0.1);
-      transition: box-shadow 0.35s ease;
-    }
-
     .draggable-note-delete {
       position: absolute;
       top: 6px;
@@ -1935,111 +1883,6 @@
       box-shadow: 0 4px 12px rgba(255, 59, 48, 0.4);
     }
 
-    .find-highlight {
-      background: rgba(255, 200, 0, 0.55);
-      border-radius: 3px;
-      padding: 0 2px;
-      box-shadow: 0 0 0 1px rgba(255, 200, 0, 0.35);
-    }
-
-    .toast-container {
-      position: fixed;
-      top: 16px;
-      right: 16px;
-      z-index: 99999;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      pointer-events: none;
-    }
-
-    .toast {
-      pointer-events: auto;
-      background: rgba(255,255,255,0.88);
-      backdrop-filter: blur(24px);
-      -webkit-backdrop-filter: blur(24px);
-      border-radius: 14px;
-      padding: 14px 22px;
-      box-shadow:
-        0 4px 16px rgba(0,0,0,0.08),
-        0 12px 40px rgba(0,0,0,0.06);
-      font-size: 14px;
-      font-weight: 500;
-      color: #1c1c1e;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      animation: toastIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
-      max-width: 380px;
-      border: 0.5px solid rgba(0,0,0,0.04);
-    }
-
-    .toast-icon {
-      font-size: 20px;
-      flex-shrink: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      background: var(--accent-alpha, rgba(0,122,255,0.1));
-      color: var(--accent, #007aff);
-    }
-
-    .toast-message {
-      flex: 1;
-      line-height: 1.4;
-    }
-
-    .toast-dismiss {
-      flex-shrink: 0;
-      width: 20px;
-      height: 20px;
-      border: none;
-      border-radius: 50%;
-      background: transparent;
-      color: rgba(0,0,0,0.25);
-      font-size: 12px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: background 0.12s, color 0.12s;
-    }
-
-    .toast-dismiss:hover {
-      background: rgba(0,0,0,0.06);
-      color: rgba(0,0,0,0.5);
-    }
-
-    .toast.removing {
-      animation: toastOut 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
-    }
-
-    @keyframes toastIn {
-      from { transform: translateX(calc(100% + 40px)); opacity: 0; }
-      to   { transform: translateX(0); opacity: 1; }
-    }
-
-    @keyframes toastOut {
-      from { transform: translateX(0); opacity: 1; }
-      to   { transform: translateX(calc(100% + 40px)); opacity: 0; }
-    }
-
-    @media (prefers-color-scheme: dark) {
-      .toast {
-        background: rgba(40,40,48,0.88);
-        color: #f5f5f7;
-        border-color: rgba(255,255,255,0.06);
-      }
-      .toast-dismiss { color: rgba(255,255,255,0.3); }
-      .toast-dismiss:hover { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.5); }
-      .find-highlight {
-        background: rgba(255, 200, 0, 0.5);
-        box-shadow: 0 0 0 1px rgba(255, 200, 0, 0.3);
-      }
-    }
   </style>
 </head>
 <body>
@@ -2067,8 +1910,6 @@
 </div>
 
 <div class="overlay" id="overlay"></div>
-
-<div class="toast-container" id="toastContainer"></div>
 
 <div class="search-container" id="searchContainer">
   <div class="search-wrapper">
@@ -2173,18 +2014,6 @@ def greet(name):
       const restText = parts.slice(1).join(' ').trim();
       const sc = slashCommands.find(c => c.id === cmdName);
       if (sc) {
-        if (sc.id === 'find') {
-          if (restText) {
-            closeSearch();
-            setTimeout(() => findInNotes(restText), 200);
-          } else {
-            input.value = sc.trigger + ' ';
-            input.placeholder = 'Enter search query...';
-            input.focus();
-            render(input.value);
-          }
-          return;
-        }
         if (restText) {
           pushHistory(sc.id);
           doChatToNote(restText, sc.systemPrompt, sc.label);
@@ -2225,7 +2054,6 @@ def greet(name):
     { id: 'grammar',    trigger: '/grammar',    label: 'Fix Grammar',icon: '\u270F\uFE0F', color: '#ff2d55', description: 'Fix grammar and improve writing',      systemPrompt: 'You are a writing assistant. Fix grammar, spelling, and style issues while preserving the original meaning.' },
     { id: 'ask',        trigger: '/ask',        label: 'Ask',        icon: '\u2753',       color: '#0a84ff', description: 'Ask anything (default mode)',          systemPrompt: 'You are a helpful assistant. Answer concisely and clearly.', canvasAction: true, canvasPrefix: 'Here are my notes for context:\n\n' },
     { id: 'canvas',     trigger: '/canvas',     label: 'Canvas',     icon: '\uD83D\uDCC4', color: '#5ac8fa', description: 'Switch to canvas (e.g. /canvas 2)', },
-    { id: 'find',       trigger: '/find',       label: 'Find in Notes', icon: '\uD83D\uDD0D', color: '#ff9500', description: 'Search text across all notes on current canvas' },
   ];
 
   let lastSlashCmd = null;
@@ -2448,18 +2276,6 @@ def greet(name):
                 switchCanvas(canvases[idx - 1].id);
               } else if (canvases.length > 0) {
                 input.value = sc.trigger + ' ';
-                input.focus();
-                render(input.value);
-              }
-              return;
-            }
-            if (sc.id === 'find') {
-              if (restText) {
-                closeSearch();
-                findInNotes(restText);
-              } else {
-                input.value = sc.trigger + ' ';
-                input.placeholder = 'Enter search query...';
                 input.focus();
                 render(input.value);
               }
@@ -2894,11 +2710,7 @@ def greet(name):
   }
 
   function renderNoteContent(note) {
-    let html = note.format === 'markdown' ? renderMarkdown(note.text) : renderPlainNote(note.text);
-    if (currentFindQuery) {
-      html = highlightText(html, currentFindQuery);
-    }
-    return html;
+    return note.format === 'markdown' ? renderMarkdown(note.text) : renderPlainNote(note.text);
   }
 
   function createNote(text, { format = 'plain', startEditing = false } = {}) {
@@ -3327,103 +3139,6 @@ def greet(name):
   let dragState = null;
   let dragPending = null;
   const DRAG_THRESHOLD = 5;
-  let focusModeNoteId = null;
-  let currentFindQuery = null;
-
-  function highlightText(html, query) {
-    if (!query) return html;
-    const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const regex = new RegExp(`(${escaped})`, 'gi');
-    return html.replace(regex, '<mark class="find-highlight">$1</mark>');
-  }
-
-  function findInNotes(query) {
-    const trimmed = query.trim();
-    if (!trimmed) return;
-    clearFindHighlights();
-    currentFindQuery = trimmed;
-    renderStickyNotes();
-    let noteCount = 0, wordCount = 0;
-    const lower = trimmed.toLowerCase();
-    notes.forEach(n => {
-      if (n.text && n.text.toLowerCase().includes(lower)) {
-        noteCount++;
-        const re = new RegExp(trimmed.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
-        wordCount += (n.text.match(re) || []).length;
-      }
-    });
-    showToast(`🔍 Found ${wordCount} match${wordCount !== 1 ? 'es' : ''} in ${noteCount} note${noteCount !== 1 ? 's' : ''} for "${trimmed}"`);
-    requestAnimationFrame(() => {
-      document.querySelectorAll('.draggable-note-text').forEach(textEl => {
-        const mark = textEl.querySelector('.find-highlight');
-        if (mark) {
-          const textRect = textEl.getBoundingClientRect();
-          const markRect = mark.getBoundingClientRect();
-          const offset = markRect.top - textRect.top - textEl.clientHeight / 2 + markRect.height / 2;
-          textEl.scrollTop += offset;
-        }
-      });
-    });
-  }
-
-  function clearFindHighlights() {
-    if (!currentFindQuery) return;
-    currentFindQuery = null;
-    renderStickyNotes();
-  }
-
-  function showToast(message) {
-    const container = document.getElementById('toastContainer');
-    const el = document.createElement('div');
-    el.className = 'toast';
-    const iconMatch = message.match(/^(\uD83D[\uDD00-\uDEFF]|[\u2000-\u27BF\u2B00-\u2BFF])\s*/);
-    let iconHtml = '';
-    let textMsg = message;
-    if (iconMatch) {
-      iconHtml = `<span class="toast-icon">${iconMatch[1]}</span>`;
-      textMsg = message.slice(iconMatch[0].length);
-    }
-    el.innerHTML = `
-      ${iconHtml}
-      <span class="toast-message">${textMsg}</span>
-      <button class="toast-dismiss">✕</button>
-    `;
-    el.querySelector('.toast-dismiss').addEventListener('click', () => {
-      el.classList.add('removing');
-      setTimeout(() => el.remove(), 250);
-    });
-    container.appendChild(el);
-    setTimeout(() => {
-      if (el.isConnected) {
-        el.classList.add('removing');
-        setTimeout(() => el.remove(), 250);
-      }
-    }, 4000);
-  }
-
-  function enterFocusMode(noteId) {
-    exitFocusMode();
-    focusModeNoteId = noteId;
-    document.querySelectorAll('.draggable-note').forEach(el => {
-      if (el.dataset.id === noteId) {
-        el.classList.add('focused');
-      } else {
-        el.classList.add('dimmed');
-      }
-    });
-    const btn = document.querySelector(`.note-focus-btn[data-focus-id="${noteId}"]`);
-    if (btn) btn.classList.add('active');
-  }
-
-  function exitFocusMode() {
-    if (!focusModeNoteId) return;
-    document.querySelectorAll('.draggable-note').forEach(el => {
-      el.classList.remove('dimmed', 'focused');
-    });
-    const btn = document.querySelector(`.note-focus-btn[data-focus-id="${focusModeNoteId}"]`);
-    if (btn) btn.classList.remove('active');
-    focusModeNoteId = null;
-  }
 
   function bringNoteToFront(noteEl) {
     if (!noteEl) return;
@@ -3476,13 +3191,12 @@ def greet(name):
       el.innerHTML = `
         <button class="draggable-note-delete" data-id="${n.id}">✕</button>
         ${n.format === 'markdown' ? `<button class="note-edit-btn" data-edit-id="${n.id}">✏️</button>` : ''}
-        <button class="note-focus-btn" data-focus-id="${n.id}" title="Focus mode">⊙</button>
         <div class="draggable-note-time">${time}</div>
         <div class="draggable-note-text ${n.format === 'markdown' ? 'note-markdown' : 'note-plain'}" data-text-id="${n.id}">${renderNoteContent(n)}</div>
         ${handleHTML}`;
 
       el.addEventListener('mousedown', (e) => {
-        if (e.target.closest('.draggable-note-delete') || e.target.closest('.note-resize-handle') || e.target.closest('.note-edit-btn') || e.target.closest('.note-focus-btn')) return;
+        if (e.target.closest('.draggable-note-delete') || e.target.closest('.note-resize-handle') || e.target.closest('.note-edit-btn')) return;
         if (e.target.closest('.draggable-note-text.editing')) return;
         if (e.button !== 0) return;
 
@@ -3589,7 +3303,6 @@ def greet(name):
     container.classList.add('visible');
     overlay.classList.add('visible');
     input.value = '';
-    input.placeholder = 'Type a command...';
     lastSlashCmd = null;
     input.focus();
     list.classList.remove('visible');
@@ -3602,7 +3315,6 @@ def greet(name):
     container.classList.remove('visible');
     overlay.classList.remove('visible');
     list.classList.remove('visible');
-    input.placeholder = 'Type a command...';
     if (chatAbortController) { chatAbortController.abort(); chatAbortController = null; }
     lastSlashCmd = null;
     input.blur();
@@ -3918,20 +3630,6 @@ def greet(name):
       requestDeleteNote(deleteSidebar.dataset.deleteId);
       return;
     }
-    const focusBtn = e.target.closest('.note-focus-btn');
-    if (focusBtn) {
-      const id = focusBtn.dataset.focusId;
-      if (focusModeNoteId === id) {
-        exitFocusMode();
-      } else {
-        enterFocusMode(id);
-      }
-      return;
-    }
-    if (focusModeNoteId && !e.target.closest('.draggable-note.focused')) {
-      exitFocusMode();
-      return;
-    }
     const deleteBtn = e.target.closest('.draggable-note-delete');
     if (deleteBtn) {
       requestDeleteNote(deleteBtn.dataset.id);
@@ -3995,14 +3693,6 @@ def greet(name):
     }
     if (e.key === 'Escape' && paletteOpen) {
       closeColorPalette();
-      return;
-    }
-    if (e.key === 'Escape' && currentFindQuery) {
-      clearFindHighlights();
-      return;
-    }
-    if (e.key === 'Escape' && focusModeNoteId) {
-      exitFocusMode();
       return;
     }
     if (e.key === 'Escape' && sidebarOpen) {
