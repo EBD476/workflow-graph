@@ -2185,6 +2185,11 @@ def greet(name):
           }
           return;
         }
+        if (sc.id === 'export-md' || sc.id === 'export-json' || sc.id === 'export-html') {
+          closeSearch();
+          setTimeout(() => exportNotes(sc.id), 200);
+          return;
+        }
         if (restText) {
           pushHistory(sc.id);
           doChatToNote(restText, sc.systemPrompt, sc.label);
@@ -2226,6 +2231,9 @@ def greet(name):
     { id: 'ask',        trigger: '/ask',        label: 'Ask',        icon: '\u2753',       color: '#0a84ff', description: 'Ask anything (default mode)',          systemPrompt: 'You are a helpful assistant. Answer concisely and clearly.', canvasAction: true, canvasPrefix: 'Here are my notes for context:\n\n' },
     { id: 'canvas',     trigger: '/canvas',     label: 'Canvas',     icon: '\uD83D\uDCC4', color: '#5ac8fa', description: 'Switch to canvas (e.g. /canvas 2)', },
     { id: 'find',       trigger: '/find',       label: 'Find in Notes', icon: '\uD83D\uDD0D', color: '#ff9500', description: 'Search text across all notes on current canvas' },
+    { id: 'export-md',  trigger: '/export-md',  label: 'Export as Markdown', icon: '\uD83D\uDCDD', color: '#34c759', description: 'Export all notes as a single Markdown file' },
+    { id: 'export-json',trigger: '/export-json',label: 'Export as JSON',     icon: '\u2699\uFE0F', color: '#007aff', description: 'Download full canvas data as JSON backup' },
+    { id: 'export-html',trigger: '/export-html',label: 'Export as HTML',     icon: '\uD83C\uDF10', color: '#bf5af2', description: 'Snapshot notes with positions as a standalone HTML page' },
   ];
 
   let lastSlashCmd = null;
@@ -2464,6 +2472,11 @@ def greet(name):
                 input.focus();
                 render(input.value);
               }
+              return;
+            }
+            if (sc.id === 'export-md' || sc.id === 'export-json' || sc.id === 'export-html') {
+              closeSearch();
+              exportNotes(sc.id);
               return;
             }
             if (restText) {
@@ -3400,6 +3413,158 @@ def greet(name):
         setTimeout(() => el.remove(), 250);
       }
     }, 4000);
+  }
+
+  function downloadFile(content, filename, mimeType) {
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  function exportNotes(type) {
+    const canvas = getCurrentCanvas();
+    if (!canvas || !canvas.notes || canvas.notes.length === 0) {
+      showToast('\u26A0\uFE0F No notes to export');
+      return;
+    }
+    const canvasName = canvas.name.replace(/[^a-zA-Z0-9 _-]/g, '').trim() || 'notes';
+    const notes = canvas.notes;
+    const date = new Date().toISOString().slice(0, 10);
+
+    if (type === 'export-md') {
+      let md = `# ${canvas.name}\n\n`;
+      notes.forEach((n, i) => {
+        md += `## Note ${i + 1} \u2014 ${new Date(n.created).toLocaleString()}\n\n`;
+        md += n.text || '*Empty*';
+        md += '\n\n---\n\n';
+      });
+      downloadFile(md, `${date}_${canvasName}.md`, 'text/markdown;charset=utf-8');
+      showToast(`\uD83D\uDCDD Exported ${notes.length} note${notes.length > 1 ? 's' : ''} as Markdown`);
+
+    } else if (type === 'export-json') {
+      const data = JSON.stringify({ version: 1, exportedAt: new Date().toISOString(), canvases, currentCanvasId }, null, 2);
+      downloadFile(data, `${date}_${canvasName}_backup.json`, 'application/json;charset=utf-8');
+      showToast(`\u2699\uFE0F JSON backup exported`);
+
+    } else if (type === 'export-html') {
+      const timeStr = new Date().toLocaleString();
+      const noteHTML = notes.map(n => {
+        const bgHex = NOTE_HEX_MAP[n.color] || '#fff3b0';
+        const content = renderNoteContent(n);
+        return `<div class="snapshot-note" style="left:${n.x}px;top:${n.y}px;width:${n.w || 220}px;height:${n.h || 180}px;background:${bgHex};z-index:${n.z || 60}">
+          <div class="snapshot-note-time">${new Date(n.created).toLocaleDateString(undefined, { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' })}</div>
+          <div class="snapshot-note-text">${content}</div>
+        </div>`;
+      }).join('\n      ');
+      const canvasBg = canvas.bg || '#171f49';
+      const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${escapeHtml(canvas.name)} \u2014 Snapshot</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
+    background: linear-gradient(-90deg, ${canvasBg}, ${canvasBg}, ${canvasBg});
+    min-height: 100vh;
+    position: relative;
+    -webkit-font-smoothing: antialiased;
+  }
+  .snapshot-header {
+    padding: 20px 24px;
+    color: rgba(255,255,255,0.6);
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+  }
+  .snapshot-note {
+    position: fixed;
+    border-radius: 12px;
+    padding: 16px;
+    padding-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12), 0 8px 24px rgba(0,0,0,0.1);
+    overflow: hidden;
+  }
+  .snapshot-note-time {
+    font-size: 9px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    opacity: 0.55;
+    pointer-events: none;
+  }
+  .snapshot-note-text {
+    flex: 1;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #1c1c1e;
+    word-break: break-word;
+    white-space: pre-wrap;
+    overflow-y: auto;
+    min-height: 0;
+  }
+  .snapshot-note-text p { margin: 4px 0; }
+  .snapshot-note-text p:first-child { margin-top: 0; }
+  .snapshot-note-text p:last-child { margin-bottom: 0; }
+  .snapshot-note-text h1, .snapshot-note-text h2, .snapshot-note-text h3 { font-weight: 600; line-height: 1.3; margin: 6px 0 4px; }
+  .snapshot-note-text h1 { font-size: 17px; }
+  .snapshot-note-text h2 { font-size: 15px; }
+  .snapshot-note-text h3 { font-size: 14px; }
+  .snapshot-note-text strong { font-weight: 700; }
+  .snapshot-note-text em { font-style: italic; }
+  .snapshot-note-text code {
+    font-family: 'SF Mono', SFMono-Regular, ui-monospace, monospace;
+    font-size: 12px;
+    background: rgba(0,0,0,0.06);
+    padding: 1px 5px;
+    border-radius: 4px;
+  }
+  .snapshot-note-text pre.code-block {
+    background: rgba(0,0,0,0.06);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-family: 'SF Mono', SFMono-Regular, ui-monospace, monospace;
+    font-size: 11px;
+    line-height: 1.5;
+    overflow-x: auto;
+    margin: 6px 0;
+  }
+  .snapshot-note-text pre.code-block code { background: none; padding: 0; }
+  .snapshot-note-text blockquote {
+    border-left: 3px solid rgba(0,0,0,0.15);
+    padding-left: 10px;
+    margin: 4px 0;
+    opacity: 0.8;
+  }
+  .snapshot-note-text ul, .snapshot-note-text ol { padding-left: 18px; margin: 4px 0; }
+  .snapshot-note-text li { margin: 2px 0; }
+  .snapshot-note-text hr { border: none; border-top: 1px solid rgba(0,0,0,0.1); margin: 8px 0; }
+  .snapshot-note-text a { color: #007aff; text-decoration: none; }
+  .snapshot-note-text img { max-width: 100%; border-radius: 6px; }
+  .snapshot-note-text table { border-collapse: collapse; width: 100%; margin: 4px 0; font-size: 12px; }
+  .snapshot-note-text th, .snapshot-note-text td { border: 1px solid rgba(0,0,0,0.1); padding: 4px 8px; text-align: left; }
+  .snapshot-note-text th { font-weight: 600; background: rgba(0,0,0,0.03); }
+</style>
+</head>
+<body>
+  <div class="snapshot-header">${escapeHtml(canvas.name)} \u2014 ${notes.length} note${notes.length > 1 ? 's' : ''} \u2014 ${timeStr}</div>
+  ${noteHTML}
+</body>
+</html>`;
+      downloadFile(html, `${date}_${canvasName}.html`, 'text/html;charset=utf-8');
+      showToast(`\uD83C\uDF10 HTML snapshot exported (${notes.length} note${notes.length > 1 ? 's' : ''})`);
+    }
   }
 
   function enterFocusMode(noteId) {
