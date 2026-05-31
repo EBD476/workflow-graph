@@ -70,14 +70,6 @@
       background: linear-gradient(-90deg, #171f49, #171f49, #171f49);
     }
 
-    #random-bg   {
-      width: 100vw;
-      height: 100vh;
-      position: relative;
-      background: linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
-      background-size: 40px 40px;
-    }
-
     .overlay {
       position: fixed;
       inset: 0;
@@ -182,7 +174,7 @@
       color: var(--text);
       outline: none;
       letter-spacing: -0.015em;
-      font-family:'poppins',  -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
     }
 
     .search-input::placeholder {
@@ -232,7 +224,7 @@
       background: var(--surface);
       backdrop-filter: blur(30px);
       -webkit-backdrop-filter: blur(30px);
-      /* border: 0.5px solid var(--surface-border); */
+      border: 0.5px solid var(--surface-border);
       box-shadow: var(--shadow);
       opacity: 0;
       transform: translateY(-8px) scale(0.97);
@@ -252,7 +244,7 @@
       display: flex;
       align-items: center;
       gap: 12px;
-      padding: 6px 16px;
+      padding: 14px 16px;
       cursor: pointer;
       border-bottom: 0.5px solid var(--divider);
       transition: background 0.15s ease, transform 0.15s ease;
@@ -416,20 +408,6 @@
       color: var(--text-tertiary);
     }
 
-    .chat-cmd-badge {
-      display: inline-block;
-      font-size: 9px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      background: var(--accent);
-      color: #fff;
-      padding: 1px 7px;
-      border-radius: 4px;
-      margin-right: 4px;
-      vertical-align: middle;
-    }
-
     .chat-bubble.assistant {
       color: var(--text);
       white-space: pre-wrap;
@@ -502,32 +480,6 @@
       0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
       40% { opacity: 1; transform: scale(1); }
     }
-
-    .note-loading {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 12px 0;
-      color: rgba(0,0,0,0.5);
-      font-size: 13px;
-      font-weight: 450;
-    }
-
-    .note-loading .dots {
-      display: flex;
-      gap: 3px;
-    }
-
-    .note-loading .dots span {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: currentColor;
-      animation: dotPulse 1.2s ease-in-out infinite;
-    }
-
-    .note-loading .dots span:nth-child(2) { animation-delay: 0.2s; }
-    .note-loading .dots span:nth-child(3) { animation-delay: 0.4s; }
 
     .chat-error {
       padding: 20px 18px;
@@ -644,7 +596,7 @@
       background: var(--surface);
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
-      /* border: 0.5px solid var(--surface-border); */
+      border: 0.5px solid var(--surface-border);
       box-shadow: var(--shadow);
       color: var(--accent);
       font-size: 20px;
@@ -686,25 +638,15 @@
       max-width: calc(100vw - 48px);
       height: 100vh;
       z-index: 160;
-      background: rgb(255 255 255 / 95%);
-      /* background: var(--surface); */
+      background: var(--surface);
       backdrop-filter: blur(30px);
       -webkit-backdrop-filter: blur(30px);
-      /* border-left: 0.5px solid var(--surface-border); */
+      border-left: 0.5px solid var(--surface-border);
       box-shadow: -4px 0 24px rgba(0,0,0,0.08);
       display: flex;
       flex-direction: column;
       transform: translateX(100%);
       transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-      z-index: 9999;
-    }
-
-    .notes-sidebar-inner {
-      position: relative;
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      min-height: 0;
     }
 
     .notes-sidebar.visible {
@@ -795,14 +737,14 @@
     .notes-sidebar-list {
       flex: 1;
       overflow-y: auto;
-      /* padding: 8px 0; */
+      padding: 8px 0;
     }
 
     .notes-sidebar-item {
       display: flex;
       align-items: center;
       gap: 12px;
-      padding: 8px 20px;
+      padding: 12px 20px;
       cursor: pointer;
       transition: background 0.12s;
       border-bottom: 0.5px solid var(--divider);
@@ -909,263 +851,6 @@
       line-height: 1.5;
     }
 
-    .sidebar-section-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 12px 20px 6px;
-      font-size: 11px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--text-tertiary);
-      flex-shrink: 0;
-    }
-
-    .sidebar-section-header .header-btn {
-      width: 22px;
-      height: 22px;
-      border: none;
-      border-radius: 50%;
-      background: var(--accent);
-      color: #fff;
-      font-size: 14px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: background 0.15s, transform 0.12s;
-    }
-
-    .sidebar-section-header .header-btn:hover {
-      opacity: 0.85;
-      transform: scale(1.05);
-    }
-
-    .canvas-list {
-      padding: 2px 0 6px;
-      flex-shrink: 0;
-    }
-
-    .canvas-item {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 20px 8px 20px;
-      cursor: pointer;
-      transition: background 0.12s;
-      border-bottom: 0.5px solid var(--divider);
-      font-size: 13px;
-    }
-
-    .canvas-item:last-child {
-      border-bottom: none;
-    }
-
-    .canvas-item:hover {
-      background: var(--accent-alpha-hover);
-    }
-
-    .canvas-item.active {
-      background: var(--accent-alpha);
-    }
-
-    .canvas-item.active .canvas-indicator {
-      color: var(--accent);
-    }
-
-    .canvas-indicator {
-      font-size: 10px;
-      color: var(--text-tertiary);
-      flex-shrink: 0;
-      width: 14px;
-      text-align: center;
-    }
-
-    .canvas-color-btn {
-      flex-shrink: 0;
-      width: 18px;
-      height: 18px;
-      border-radius: 50%;
-      border: 1.5px solid rgba(255,255,255,0.2);
-      cursor: pointer;
-      transition: transform 0.15s, border-color 0.15s;
-      background: var(--dot-color);
-      padding: 0;
-      position: relative;
-    }
-
-    .canvas-color-btn:hover {
-      transform: scale(1.25);
-      border-color: rgba(255,255,255,0.5);
-    }
-
-    .color-palette-popup {
-      position: absolute;
-      bottom: 12px;
-      left: 12px;
-      right: 12px;
-      z-index: 200;
-      background: var(--surface);
-      backdrop-filter: blur(30px);
-      border: 0.5px solid var(--surface-border);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow-focus);
-      padding: 16px 14px 14px;
-      opacity: 0;
-      pointer-events: none;
-      transform: translateY(8px) scale(0.96);
-      transition: opacity 0.2s ease, transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-
-    .color-palette-popup.visible {
-      opacity: 1;
-      pointer-events: auto;
-      transform: translateY(0) scale(1);
-    }
-
-    .color-palette-title {
-      font-size: 11px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--text-tertiary);
-      margin-bottom: 12px;
-    }
-
-    .color-palette-group {
-      margin-bottom: 10px;
-    }
-
-    .color-palette-group:last-child {
-      margin-bottom: 0;
-    }
-
-    .color-palette-group-label {
-      font-size: 10px;
-      font-weight: 600;
-      color: var(--text-secondary);
-      margin-bottom: 5px;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-    }
-
-    .color-palette-row {
-      display: flex;
-      gap: 6px;
-    }
-
-    .color-palette-swatch {
-      flex: 1;
-      aspect-ratio: 1;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: transform 0.12s, box-shadow 0.12s;
-      border: 2px solid transparent;
-      max-width: 36px;
-    }
-
-    .color-palette-swatch:hover {
-      transform: scale(1.15);
-      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-    }
-
-    .color-palette-swatch.active {
-      border-color: #fff;
-      box-shadow: 0 0 0 2px var(--accent);
-    }
-
-    .canvas-name {
-      flex: 1;
-      min-width: 0;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      font-weight: 500;
-      color: var(--text);
-    }
-
-    .canvas-rename-btn {
-      flex-shrink: 0;
-      width: 20px;
-      height: 20px;
-      border: none;
-      border-radius: 50%;
-      background: transparent;
-      color: var(--text-tertiary);
-      font-size: 10px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      opacity: 0;
-      transition: opacity 0.12s, background 0.12s, color 0.12s;
-      line-height: 1;
-    }
-
-    .canvas-item:hover .canvas-rename-btn {
-      opacity: 1;
-    }
-
-    .canvas-rename-btn:hover {
-      background: var(--accent-alpha);
-      color: var(--accent);
-    }
-
-    .canvas-item.drag-over {
-      background: var(--accent-alpha);
-      outline: 2px dashed var(--accent);
-      outline-offset: -2px;
-      border-radius: 6px;
-    }
-
-    .notes-sidebar-item.dragging {
-      opacity: 0.4;
-    }
-
-    .canvas-count {
-      font-size: 10px;
-      color: #59565e;
-      background: var(--kbd-bg);
-      border-radius: 8px;
-      padding: 1px 6px;
-      font-weight: 600;
-      flex-shrink: 0;
-    }
-
-    .canvas-delete-btn {
-      flex-shrink: 0;
-      width: 20px;
-      height: 20px;
-      border: none;
-      border-radius: 50%;
-      background: transparent;
-      color: var(--text-tertiary);
-      font-size: 12px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      opacity: 0;
-      transition: opacity 0.12s, background 0.12s, color 0.12s;
-    }
-
-    .canvas-item:hover .canvas-delete-btn {
-      opacity: 1;
-    }
-
-    .canvas-delete-btn:hover {
-      background: rgba(255,69,58,0.12);
-      color: #ff453a;
-    }
-
-    .sidebar-divider {
-      height: 0.5px;
-      background: var(--divider);
-      margin: 4px 16px;
-      flex-shrink: 0;
-    }
-
     .notes-sidebar-list::-webkit-scrollbar {
       width: 4px;
     }
@@ -1183,7 +868,7 @@
       position: fixed;
       z-index: 50;
       width: 220px;
-      min-height: 50px;
+      min-height: 140px;
       border-radius: var(--radius-sm);
       padding: 16px;
       padding-bottom: 20px;
@@ -1227,7 +912,7 @@
 
     .draggable-note.resizing {
       transition: none;
-      cursor: default;
+      cursor: nwse-resize;
       z-index: 200;
     }
 
@@ -1257,24 +942,9 @@
       word-break: break-word;
       outline: none;
       white-space: pre-wrap;
-      min-height: 0;
+      min-height: 60px;
       cursor: text;
       overflow-y: auto;
-      scrollbar-width: thin;
-      scrollbar-color: var(--note-scroll-thumb, rgba(0,0,0,0.12)) transparent;
-    }
-
-    .draggable-note-text::-webkit-scrollbar {
-      width: 5px;
-    }
-
-    .draggable-note-text::-webkit-scrollbar-thumb {
-      background: var(--note-scroll-thumb, rgba(0,0,0,0.12));
-      border-radius: 4px;
-    }
-
-    .draggable-note-text::-webkit-scrollbar-track {
-      background: transparent;
     }
 
     .draggable-note-text.editing {
@@ -1687,9 +1357,17 @@
 
     .note-resize-handle {
       position: absolute;
-      z-index: 10;
+      right: 0;
+      bottom: 0;
+      width: 20px;
+      height: 20px;
+      cursor: nwse-resize;
       opacity: 0;
-      transition: opacity 0.12s;
+      transition: opacity 0.15s;
+      display: flex;
+      align-items: flex-end;
+      justify-content: flex-end;
+      pointer-events: auto;
     }
 
     .draggable-note:hover .note-resize-handle {
@@ -1700,15 +1378,14 @@
       opacity: 0.8;
     }
 
-    .note-resize-handle.n  { top: -3px;  left: 10px;  right: 10px; height: 6px; cursor: ns-resize; }
-    .note-resize-handle.s  { bottom: -3px; left: 10px; right: 10px; height: 6px; cursor: ns-resize; }
-    .note-resize-handle.e  { right: -3px; top: 10px;  bottom: 10px; width: 6px; cursor: ew-resize; }
-    .note-resize-handle.w  { left: -3px;  top: 10px;  bottom: 10px; width: 6px; cursor: ew-resize; }
-
-    .note-resize-handle.se { right: -4px; bottom: -4px; width: 14px; height: 14px; cursor: nwse-resize; background: rgba(0,0,0,0.08); border-radius: 0 0 4px 0; }
-    .note-resize-handle.sw { left: -4px;  bottom: -4px; width: 14px; height: 14px; cursor: nesw-resize; background: rgba(0,0,0,0.08); border-radius: 0 0 0 4px; }
-    .note-resize-handle.ne { right: -4px; top: -4px;   width: 14px; height: 14px; cursor: nesw-resize; background: rgba(0,0,0,0.08); border-radius: 0 4px 0 0; }
-    .note-resize-handle.nw { left: -4px;  top: -4px;   width: 14px; height: 14px; cursor: nwse-resize; background: rgba(0,0,0,0.08); border-radius: 4px 0 0 0; }
+    .note-resize-handle::after {
+      content: '';
+      width: 10px;
+      height: 10px;
+      border-right: 2px solid rgba(0,0,0,0.25);
+      border-bottom: 2px solid rgba(0,0,0,0.25);
+      border-radius: 0 0 3px 0;
+    }
 
     @keyframes notePop {
       from { opacity: 0; transform: scale(0.9) translateY(8px); }
@@ -1882,7 +1559,6 @@
       background: #e6352b;
       box-shadow: 0 4px 12px rgba(255, 59, 48, 0.4);
     }
-
   </style>
 </head>
 <body>
@@ -1892,21 +1568,15 @@
 
 <div class="notes-sidebar-overlay" id="notesSidebarOverlay"></div>
 <div class="notes-sidebar" id="notesSidebar">
-  <div class="notes-sidebar-inner">
-    <div class="notes-sidebar-header">
-      <span class="notes-sidebar-title">📌 Notes</span>
-      <div class="notes-sidebar-actions">
-        <button type="button" class="notes-sidebar-add simple" id="notesSidebarAddSimple" title="New simple note" aria-label="New simple note">+</button>
-        <button type="button" class="notes-sidebar-add markdown" id="notesSidebarAddMarkdown" title="New markdown note" aria-label="New markdown note">Md</button>
-        <button type="button" class="notes-sidebar-close" id="notesSidebarClose" aria-label="Close notes">✕</button>
-      </div>
-    </div>
-    <div class="notes-sidebar-list" id="notesSidebarList"></div>
-    <div class="color-palette-popup" id="colorPalettePopup">
-      <div class="color-palette-title">Canvas background</div>
-      <div class="color-palette-grid" id="colorPaletteGrid"></div>
+  <div class="notes-sidebar-header">
+    <span class="notes-sidebar-title">📌 Notes</span>
+    <div class="notes-sidebar-actions">
+      <button type="button" class="notes-sidebar-add simple" id="notesSidebarAddSimple" title="New simple note" aria-label="New simple note">+</button>
+      <button type="button" class="notes-sidebar-add markdown" id="notesSidebarAddMarkdown" title="New markdown note" aria-label="New markdown note">Md</button>
+      <button type="button" class="notes-sidebar-close" id="notesSidebarClose" aria-label="Close notes">✕</button>
     </div>
   </div>
+  <div class="notes-sidebar-list" id="notesSidebarList"></div>
 </div>
 
 <div class="overlay" id="overlay"></div>
@@ -1968,8 +1638,6 @@
     { id: 'new-markdown-note', title: 'Markdown Note', subtitle: 'Create a note with markdown formatting', icon: 'M', color: '#bf5af2', shortcut: [], action: () => createMarkdownNote(input.value.trim() || null) },
     { id: 'view-notes',  title: 'View Notes',         subtitle: 'Show all sticky notes',          icon: '\uD83D\uDCCC', color: '#5ac8fa', shortcut: [], action: openSidebar },
     { id: 'clear-notes', title: 'Clear All Notes',    subtitle: 'Remove all sticky notes',        icon: '\u267B', color: '#ff3b30', shortcut: [], action: clearAllNotes },
-    { id: 'new-canvas',  title: 'New Canvas',          subtitle: 'Create a new canvas',            icon: '+', color: '#5ac8fa', shortcut: [], action: () => addCanvas(prompt('Canvas name:', 'Canvas ' + (canvases.length + 1)) || '') },
-    { id: 'delete-canvas', title: 'Delete Current Canvas', subtitle: 'Remove the active canvas and all its notes', icon: '\uD83D\uDDD1\uFE0F', color: '#ff3b30', shortcut: [], action: deleteCurrentCanvas },
   ];
 
   const noteColors = ['yellow', 'green', 'blue', 'pink', 'lavender', 'peach', 'mint', 'coral'];
@@ -2000,38 +1668,15 @@ def greet(name):
   // const LLM_ENDPOINT = localStorage.getItem('llm_endpoint') || 'http://192.168.161.160:11434/api/chat';
   // const LLM_MODEL = localStorage.getItem('llm_model') || 'llama3.2';
 
-  // const LLM_ENDPOINT = localStorage.getItem('llm_endpoint') || 'http://192.168.164.205:11434/api/chat';
-  const LLM_ENDPOINT = localStorage.getItem('llm_endpoint') || 'http://192.168.167.70:11434/api/chat';
+  const LLM_ENDPOINT = localStorage.getItem('llm_endpoint') || 'http://192.168.164.205:11434/api/chat';
   const LLM_MODEL = localStorage.getItem('llm_model') || 'qwen3.5:35b';
 
 
   function chatAction() {
-    const query = input.value.trim();
-    if (!query) return;
-    if (query.startsWith('/')) {
-      const parts = query.slice(1).split(' ');
-      const cmdName = parts[0].toLowerCase();
-      const restText = parts.slice(1).join(' ').trim();
-      const sc = slashCommands.find(c => c.id === cmdName);
-      if (sc) {
-        if (restText) {
-          pushHistory(sc.id);
-          doChatToNote(restText, sc.systemPrompt, sc.label);
-          return;
-        }
-        if (sc.canvasAction) {
-          const notesText = getCanvasNotesText();
-          if (notesText) {
-            pushHistory(sc.id);
-            doChatToNote(sc.canvasPrefix + notesText, sc.systemPrompt, sc.label);
-            return;
-          }
-        }
-        return;
-      }
-    }
+    const prompt = input.value.trim();
+    if (!prompt) return;
     pushHistory('ask-ai');
-    doChat(query);
+    doChat(prompt);
   }
 
   const chatCmd = {
@@ -2044,19 +1689,6 @@ def greet(name):
     action: chatAction,
     isChat: true,
   };
-
-  const slashCommands = [
-    { id: 'summarize',  trigger: '/summarize',  label: 'Summarize',  icon: '\uD83D\uDCDD', color: '#34c759', description: 'Summarize text concisely',           systemPrompt: 'You are a summarization assistant. Summarize the following text concisely while preserving key information.', canvasAction: true, canvasPrefix: 'Summarize these notes:\n\n' },
-    { id: 'translate',  trigger: '/translate',  label: 'Translate',  icon: '\uD83C\uDF10', color: '#007aff', description: 'Translate text to another language',    systemPrompt: 'You are a translation assistant. Translate the provided text. If the user specifies a target language, use it. Otherwise detect the language and translate to persian.', canvasAction: true, canvasPrefix: 'Translate the following notes:\n\n' },
-    { id: 'explain',    trigger: '/explain',    label: 'Explain',    icon: '\uD83D\uDCA1', color: '#ff9500', description: 'Explain a concept in simple terms',      systemPrompt: 'You are an expert tutor. Explain concepts clearly as if teaching a beginner. Use examples.' },
-    { id: 'brainstorm', trigger: '/brainstorm', label: 'Brainstorm', icon: '\u2728',       color: '#bf5af2', description: 'Generate creative ideas',               systemPrompt: 'You are a creative brainstorming partner. Generate diverse, creative ideas.' },
-    { id: 'code',       trigger: '/code',       label: 'Code',       icon: '</>',          color: '#5ac8fa', description: 'Write or analyze code',               systemPrompt: 'You are a programming expert. Write clean, well-documented code with explanations.' },
-    { id: 'grammar',    trigger: '/grammar',    label: 'Fix Grammar',icon: '\u270F\uFE0F', color: '#ff2d55', description: 'Fix grammar and improve writing',      systemPrompt: 'You are a writing assistant. Fix grammar, spelling, and style issues while preserving the original meaning.' },
-    { id: 'ask',        trigger: '/ask',        label: 'Ask',        icon: '\u2753',       color: '#0a84ff', description: 'Ask anything (default mode)',          systemPrompt: 'You are a helpful assistant. Answer concisely and clearly.', canvasAction: true, canvasPrefix: 'Here are my notes for context:\n\n' },
-    { id: 'canvas',     trigger: '/canvas',     label: 'Canvas',     icon: '\uD83D\uDCC4', color: '#5ac8fa', description: 'Switch to canvas (e.g. /canvas 2)', },
-  ];
-
-  let lastSlashCmd = null;
 
   const container = document.getElementById('searchContainer');
   const overlay = document.getElementById('overlay');
@@ -2218,94 +1850,11 @@ def greet(name):
       }
     }
 
-    for (const c of canvases) {
-      const titleResult = fuzzyMatch(query, c.name);
-      const subResult = fuzzyMatch(query, 'canvas');
-      const bestScore = Math.max(titleResult.score, subResult.score);
-      if (bestScore > 0) {
-        const isActive = c.id === currentCanvasId;
-        scored.push({
-          id: 'switch-canvas-' + c.id,
-          title: isActive ? '\u25CF ' + c.name : '\u25CB ' + c.name,
-          subtitle: 'Switch to canvas' + (c.notes ? ` (${c.notes.length} notes)` : ''),
-          icon: '\uD83D\uDCC4',
-          color: '#5ac8fa',
-          shortcut: [],
-          action: () => switchCanvas(c.id),
-          isChat: false,
-          _skipHistory: true,
-          fuzzyScore: bestScore * 0.85,
-          matchPositions: titleResult.positions,
-          matchField: 'title',
-          isHistory: false,
-        });
-      }
-    }
-
     scored.sort((a, b) => {
       if (Math.abs(a.fuzzyScore - b.fuzzyScore) > 0.001) return b.fuzzyScore - a.fuzzyScore;
       if (a.isHistory !== b.isHistory) return a.isHistory ? -1 : 1;
       return a.title.localeCompare(b.title);
     });
-
-    if (query.startsWith('/')) {
-      const parts = query.slice(1).split(' ');
-      const cmdName = parts[0].toLowerCase();
-      const restText = parts.slice(1).join(' ').trim();
-      const exact = slashCommands.find(sc => sc.id === cmdName);
-      const matches = exact ? [exact] : slashCommands.filter(sc => sc.id.startsWith(cmdName));
-      const canvasNoteCount = notes.filter(n => (n.text || '').trim()).length;
-      for (const sc of matches) {
-        scored.unshift({
-          id: sc.id,
-          title: sc.label,
-          subtitle: restText
-            ? `\u201C${restText}\u201D`
-            : (sc.canvasAction && canvasNoteCount
-                ? `${sc.label} ${canvasNoteCount} canvas note${canvasNoteCount > 1 ? 's' : ''}`
-                : sc.description),
-          icon: sc.icon,
-          color: sc.color,
-          shortcut: [],
-          action: () => {
-            pushHistory(sc.id);
-            if (sc.id === 'canvas') {
-              const idx = parseInt(restText, 10);
-              if (!isNaN(idx) && idx >= 1 && idx <= canvases.length) {
-                closeSearch();
-                switchCanvas(canvases[idx - 1].id);
-              } else if (canvases.length > 0) {
-                input.value = sc.trigger + ' ';
-                input.focus();
-                render(input.value);
-              }
-              return;
-            }
-            if (restText) {
-              doChatToNote(restText, sc.systemPrompt, sc.label);
-            } else if (sc.canvasAction) {
-              const notesText = getCanvasNotesText();
-              if (notesText) {
-                doChatToNote(sc.canvasPrefix + notesText, sc.systemPrompt, sc.label);
-              } else {
-                input.value = sc.trigger + ' ';
-                input.focus();
-                render(input.value);
-              }
-            } else {
-              input.value = sc.trigger + ' ';
-              input.focus();
-              render(input.value);
-            }
-          },
-          isChat: true,
-          fuzzyScore: 1,
-          matchPositions: [],
-          matchField: 'title',
-          isHistory: false,
-        });
-      }
-    }
 
     scored.push({
       ...chatCmd,
@@ -2338,22 +1887,19 @@ def greet(name):
     list.classList.add('visible');
   }
 
-  function renderChatLoading(prompt, commandLabel) {
-    const label = commandLabel ? ` (${commandLabel})` : '';
+  function renderChatLoading(prompt) {
     list.innerHTML =
       '<li class="chat-view">' +
-        '<div class="chat-bubble user' + (commandLabel ? ' with-cmd' : '') + '">' +
-          (commandLabel ? '<span class="chat-cmd-badge">' + commandLabel + '</span> ' : '') +
-          prompt.replace(/[&<>"']/g, (m) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m] || m) + '</div>' +
+        '<div class="chat-bubble user">' + prompt.replace(/[&<>"']/g, (m) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m] || m) + '</div>' +
         '<li class="chat-loading">' +
-          '<span>Thinking' + label + '</span>' +
+          '<span>Thinking</span>' +
           '<span class="dots"><span></span><span></span><span></span></span>' +
         '</li>' +
       '</li>';
     list.classList.add('visible');
   }
 
-  function renderChatResponse(prompt, responseText, commandLabel) {
+  function renderChatResponse(prompt, responseText) {
     const html = responseText
       .replace(/[&<>"']/g, (m) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m] || m)
       .replace(/```(\w*)\n?([\s\S]*?)```/g, '<pre><code>$2</code></pre>')
@@ -2362,9 +1908,7 @@ def greet(name):
       .replace(/\n/g, '<br>');
     list.innerHTML =
       '<li class="chat-view">' +
-        '<div class="chat-bubble user' + (commandLabel ? ' with-cmd' : '') + '">' +
-          (commandLabel ? '<span class="chat-cmd-badge">' + commandLabel + '</span> ' : '') +
-          prompt.replace(/[&<>"']/g, (m) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m] || m) + '</div>' +
+        '<div class="chat-bubble user">' + prompt.replace(/[&<>"']/g, (m) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m] || m) + '</div>' +
         '<div class="chat-bubble assistant"><p>' + html + '</p></div>' +
         '<li class="chat-actions">' +
           '<button class="chat-btn" data-chat-action="copy">Copy</button>' +
@@ -2375,12 +1919,10 @@ def greet(name):
     list.classList.add('visible');
   }
 
-  function renderChatError(prompt, errorMsg, commandLabel) {
+  function renderChatError(prompt, errorMsg) {
     list.innerHTML =
       '<li class="chat-view">' +
-        '<div class="chat-bubble user' + (commandLabel ? ' with-cmd' : '') + '">' +
-          (commandLabel ? '<span class="chat-cmd-badge">' + commandLabel + '</span> ' : '') +
-          prompt.replace(/[&<>"']/g, (m) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m] || m) + '</div>' +
+        '<div class="chat-bubble user">' + prompt.replace(/[&<>"']/g, (m) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m] || m) + '</div>' +
         '<div class="chat-error">\u26A0\uFE0F ' + errorMsg.replace(/[&<>"']/g, (m) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m] || m) + '</div>' +
         '<li class="chat-actions">' +
           '<button class="chat-btn primary" data-chat-action="retry">Retry</button>' +
@@ -2390,21 +1932,8 @@ def greet(name):
     list.classList.add('visible');
   }
 
-  function getCanvasNotesText() {
-    const withText = notes.filter(n => (n.text || '').trim());
-    if (!withText.length) return null;
-    return withText.map((n, i) => {
-      const text = n.text.trim();
-      const content = n.format === 'markdown' ? stripMarkdownForPreview(text) : text;
-      const time = new Date(n.created).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-      return `[${i + 1}] (${time})\n${content}`;
-    }).join('\n\n---\n\n');
-  }
-
-  async function doChat(prompt, systemPrompt, commandLabel) {
-    const sysMsg = systemPrompt || 'You are a helpful assistant. Answer concisely and clearly.';
-    lastSlashCmd = commandLabel ? { systemPrompt: sysMsg, label: commandLabel, prompt } : null;
-    renderChatLoading(prompt, commandLabel);
+  async function doChat(prompt) {
+    renderChatLoading(prompt);
     chatAbortController = new AbortController();
 
     try {
@@ -2415,7 +1944,7 @@ def greet(name):
         body: JSON.stringify({
           model: LLM_MODEL,
           messages: [
-            { role: 'system', content: sysMsg },
+            { role: 'system', content: 'You are a helpful assistant. Answer concisely and clearly.' },
             { role: 'user', content: prompt },
           ],
           stream: false,
@@ -2429,218 +1958,29 @@ def greet(name):
 
       const data = await res.json();
       const reply = data.message?.content || data.response || JSON.stringify(data);
-      renderChatResponse(prompt, reply, commandLabel);
+      renderChatResponse(prompt, reply);
     } catch (err) {
       if (err.name === 'AbortError') return;
-      renderChatError(prompt, err.message || 'Failed to reach AI. Check endpoint or network.', commandLabel);
+      renderChatError(prompt, err.message || 'Failed to reach AI. Check endpoint or network.');
     } finally {
       chatAbortController = null;
     }
   }
 
-  async function doChatToNote(prompt, systemPrompt, actionLabel) {
-    closeSearch();
-    const sysMsg = systemPrompt || 'You are a helpful assistant. Answer concisely and clearly.';
-    lastSlashCmd = { systemPrompt: sysMsg, label: actionLabel, prompt };
-    const noteId = createNote('', { format: 'markdown', startEditing: false });
-    const noteEl = document.querySelector(`.draggable-note[data-id="${noteId}"]`);
-    const textEl = noteEl?.querySelector('.draggable-note-text');
-    if (textEl) {
-      textEl.innerHTML = `<div class="note-loading"><span class="note-loading-label">${actionLabel || 'Thinking'}</span><span class="dots"><span></span><span></span><span></span></span></div>`;
-    }
-    const minDisplay = new Promise(r => setTimeout(r, 400));
-    try {
-      const [res] = await Promise.all([
-        fetch(LLM_ENDPOINT, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ model: LLM_MODEL, messages: [{ role: 'system', content: sysMsg }, { role: 'user', content: prompt }], stream: false }),
-        }),
-        minDisplay,
-      ]);
-      if (!res.ok) { const t = await res.text().catch(() => ''); throw new Error(t || `HTTP ${res.status}`); }
-      const data = await res.json();
-      const reply = data.message?.content || data.response || JSON.stringify(data);
-      const note = notes.find(n => n.id === noteId);
-      if (note) {
-        note.text = reply;
-        note.format = 'markdown';
-        saveCanvasData();
-        const el = document.querySelector(`.draggable-note[data-id="${noteId}"] .draggable-note-text`);
-        if (el) el.innerHTML = renderNoteContent(note);
-        renderSidebar();
-      }
-    } catch (err) {
-      const note = notes.find(n => n.id === noteId);
-      if (note) {
-        note.text = `**Error:** ${err.message || 'Request failed. Check endpoint.'}`;
-        note.format = 'markdown';
-        saveCanvasData();
-        const el = document.querySelector(`.draggable-note[data-id="${noteId}"] .draggable-note-text`);
-        if (el) el.innerHTML = renderNoteContent(note);
-        renderSidebar();
-      }
-    }
-  }
-
-  let canvases = [];
-  let currentCanvasId = null;
-  let notes = [];
+  let notes = loadNotes();
   let noteZCounter = 60;
 
-  const CANVAS_BG_COLORS = ['#171f49','#1a1a2e','#16213e','#0f3460','#533483','#2d4059','#222831','#30475e','#1b262c','#0c2233'];
-
-  const CANVAS_PRESET_COLORS = [
-    { group: 'Green',  colors: ['#1b4332','#2d6a4f','#40916c','#52b788','#74c69d'] },
-    { group: 'Blue',   colors: ['#0c2233','#0f3460','#1a5276','#2980b9','#3498db'] },
-    { group: 'Purple', colors: ['#2c0e37','#4a1942','#6c3483','#7d3c98','#8e44ad'] },
-    { group: 'Yellow', colors: ['#3d3100','#5c4800','#7a6000','#9e7800','#b7950b'] },
-    { group: 'Red',    colors: ['#3d0c0c','#5c1a1a','#7a2424','#992d2d','#c0392b'] },
-    { group: 'Neutral',colors: ['#1a1a2e','#222831','#2d3436','#2c3e50','#34495e'] },
-  ];
-
-  let paletteTargetCanvas = null;
-  let paletteOpen = false;
-
-  function openColorPalette(canvasId) {
-    paletteTargetCanvas = canvasId;
-    paletteOpen = true;
-    const popup = document.getElementById('colorPalettePopup');
-    const grid = document.getElementById('colorPaletteGrid');
-    const c = canvases.find(c => c.id === canvasId);
-    if (!popup || !grid || !c) return;
-    grid.innerHTML = CANVAS_PRESET_COLORS.map(g => `
-      <div class="color-palette-group">
-        <div class="color-palette-group-label">${g.group}</div>
-        <div class="color-palette-row">
-          ${g.colors.map(col => `
-            <div class="color-palette-swatch${col === c.bg ? ' active' : ''}" style="background:${col}" data-color="${col}"></div>
-          `).join('')}
-        </div>
-      </div>
-    `).join('');
-    popup.classList.add('visible');
-  }
-
-  function closeColorPalette() {
-    paletteOpen = false;
-    paletteTargetCanvas = null;
-    document.getElementById('colorPalettePopup').classList.remove('visible');
-  }
-
-  function setCanvasBg(canvasId, color) {
-    const c = canvases.find(c => c.id === canvasId);
-    if (!c) return;
-    c.bg = color;
-    if (canvasId === currentCanvasId) applyCanvasBg(color);
-    saveCanvasData();
-    renderSidebar();
-  }
-
-  function getRandomCanvasBg() {
-    return CANVAS_BG_COLORS[Math.floor(Math.random() * CANVAS_BG_COLORS.length)];
-  }
-
-  function loadCanvasData() {
+  function loadNotes() {
     try {
-      const raw = JSON.parse(localStorage.getItem('canvas_data') || 'null');
-      if (raw && Array.isArray(raw.canvases) && raw.canvases.length) {
-        raw.canvases.forEach(c => { if (!c.bg) c.bg = getRandomCanvasBg(); });
-        return raw;
-      }
-    } catch {}
-    try {
-      const oldNotes = JSON.parse(localStorage.getItem('sticky_notes') || '[]');
-      if (Array.isArray(oldNotes) && oldNotes.length) {
-        const id = 'canvas_' + Date.now().toString(36);
-        const data = { canvases: [{ id, name: 'Canvas 1', notes: oldNotes, bg: '#171f49' }], currentCanvasId: id };
-        localStorage.setItem('canvas_data', JSON.stringify(data));
-        return data;
-      }
-    } catch {}
-    const id = 'canvas_' + Date.now().toString(36);
-    return { canvases: [{ id, name: 'Canvas 1', notes: [], bg: '#171f49' }], currentCanvasId: id };
+      return JSON.parse(localStorage.getItem('sticky_notes') || '[]');
+    } catch { return []; }
   }
 
-  function saveCanvasData() {
+  function saveNotes() {
     try {
-      localStorage.setItem('canvas_data', JSON.stringify({ canvases, currentCanvasId }));
+      localStorage.setItem('sticky_notes', JSON.stringify(notes));
     } catch {}
   }
-
-  function getCanvasRef(id) {
-    return canvases.find(c => c.id === id);
-  }
-
-  function switchCanvas(id) {
-    const c = getCanvasRef(id);
-    if (!c) return;
-    currentCanvasId = id;
-    notes = c.notes;
-    if (c.bg) applyCanvasBg(c.bg);
-    saveCanvasData();
-    renderStickyNotes();
-    renderSidebar();
-  }
-
-  function applyCanvasBg(color) {
-    document.body.style.background = `linear-gradient(-90deg, ${color}, ${color}, ${color})`;
-  }
-
-  function addCanvas(name) {
-    const id = 'canvas_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 4);
-    const c = { id, name: name || ('Canvas ' + (canvases.length + 1)), notes: [], bg: getRandomCanvasBg() };
-    canvases.push(c);
-    switchCanvas(id);
-    return id;
-  }
-
-  function removeCanvas(id) {
-    if (canvases.length <= 1) return;
-    const idx = canvases.findIndex(c => c.id === id);
-    if (idx < 0) return;
-    canvases.splice(idx, 1);
-    if (currentCanvasId === id) {
-      const next = canvases[Math.min(idx, canvases.length - 1)];
-      currentCanvasId = next.id;
-      notes = next.notes;
-    }
-    saveCanvasData();
-    renderStickyNotes();
-    renderSidebar();
-  }
-
-  function renameCanvas(id, name) {
-    const c = getCanvasRef(id);
-    if (!c || !name) return;
-    c.name = name;
-    saveCanvasData();
-    renderSidebar();
-  }
-
-  async function deleteCurrentCanvas() {
-    if (canvases.length <= 1) return;
-    const c = getCurrentCanvas();
-    const ok = await showConfirmDialog({
-      title: 'Delete canvas?',
-      message: `"${escapeHtml(c.name)}" and all its notes will be permanently removed.`,
-      confirmLabel: 'Delete',
-    });
-    if (ok) removeCanvas(c.id);
-  }
-
-  function getCurrentCanvas() {
-    return getCanvasRef(currentCanvasId) || canvases[0];
-  }
-
-  function initCanvasData() {
-    const data = loadCanvasData();
-    canvases = data.canvases;
-    currentCanvasId = data.currentCanvasId;
-    notes = getCurrentCanvas().notes;
-  }
-
-  initCanvasData();
 
   function initNoteZIndex() {
     let changed = false;
@@ -2653,7 +1993,7 @@ def greet(name):
       if (n.z > maxZ) maxZ = n.z;
     });
     noteZCounter = maxZ;
-    if (changed) saveCanvasData();
+    if (changed) saveNotes();
   }
 
   function getNextNoteZ() {
@@ -2665,17 +2005,6 @@ def greet(name):
 
   function getRandomColor() {
     return noteColors[Math.floor(Math.random() * noteColors.length)];
-  }
-
-  const NOTE_HEX_MAP = {
-    yellow: '#fff3b0', green: '#b5e6b5', blue: '#b5d6f0', pink: '#f0c4d8',
-    lavender: '#d4c4f0', peach: '#fad4b5', mint: '#b5e6d4', coral: '#f5b8b0'
-  };
-
-  function darkenColor(name, amount) {
-    const hex = NOTE_HEX_MAP[name] || '#fff3b0';
-    const r = parseInt(hex.slice(1,3), 16), g = parseInt(hex.slice(3,5), 16), b = parseInt(hex.slice(5,7), 16);
-    return `rgb(${Math.floor(r*(1-amount))},${Math.floor(g*(1-amount))},${Math.floor(b*(1-amount))})`;
   }
 
   function stripMarkdownForPreview(text) {
@@ -2733,11 +2062,11 @@ def greet(name):
       x: 60 + Math.random() * 200,
       y: 100 + Math.random() * 300,
       w: isMarkdown || noteText.includes('\n') ? 260 : 220,
-      h: 180,
+      h: isMarkdown ? 200 : 160,
     };
     notes.unshift(note);
-    if (notes.length > 20) notes.length = 20;
-    saveCanvasData();
+    if (notes.length > 20) notes = notes.slice(0, 20);
+    saveNotes();
     renderStickyNotes();
     renderSidebar();
 
@@ -2781,9 +2110,8 @@ def greet(name):
   function deleteNote(id) {
     const el = document.querySelector(`.draggable-note[data-id="${id}"]`);
     if (el) el.remove();
-    const idx = notes.findIndex(n => n.id === id);
-    if (idx >= 0) notes.splice(idx, 1);
-    saveCanvasData();
+    notes = notes.filter(n => n.id !== id);
+    saveNotes();
     renderSidebar();
   }
 
@@ -2841,8 +2169,8 @@ def greet(name):
       confirmLabel: 'Clear all',
     });
     if (!ok) return;
-    notes.length = 0;
-    saveCanvasData();
+    notes = [];
+    saveNotes();
     document.querySelectorAll('.draggable-note').forEach(el => el.remove());
     renderSidebar();
   }
@@ -2851,7 +2179,7 @@ def greet(name):
     const note = notes.find(n => n.id === id);
     if (!note) return;
     note.visible = !note.visible;
-    saveCanvasData();
+    saveNotes();
     const el = document.querySelector(`.draggable-note[data-id="${id}"]`);
     if (el) el.classList.toggle('hidden', !note.visible);
     renderSidebar();
@@ -2874,85 +2202,26 @@ def greet(name):
 
   function renderSidebar() {
     const listEl = document.getElementById('notesSidebarList');
-    let html = '';
-
-    html += '<div class="sidebar-section-header"><span>Canvases</span><button class="header-btn" id="canvasAddBtn" title="New canvas">+</button></div>';
-    html += '<div class="canvas-list">';
-    for (const c of canvases) {
-      const isActive = c.id === currentCanvasId;
-      const noteCount = c.notes ? c.notes.length : 0;
-      const safeName = escapeHtml(c.name || 'Unnamed');
-      html += `<div class="canvas-item${isActive ? ' active' : ''}" data-canvas-id="${c.id}">`;
-      html +=   `<span class="canvas-indicator">${isActive ? '\u25CF' : '\u25CB'}</span>`;
-      html +=   `<span class="canvas-name">${safeName}</span>`;
-      html +=   `<button class="canvas-rename-btn" data-rename-id="${c.id}" title="Rename canvas">\u270F\uFE0F</button>`;
-      html +=   `<button class="canvas-color-btn" data-color-id="${c.id}" title="Change background" style="--dot-color:${c.bg || '#171f49'}"></button>`;
-      html +=   `<span class="canvas-count">${noteCount}</span>`;
-      if (canvases.length > 1) {
-        html +=   `<button class="canvas-delete-btn" data-canvas-id="${c.id}" title="Delete canvas">\u2715</button>`;
-      }
-      html += '</div>';
+    if (!notes.length) {
+      listEl.innerHTML = '<div class="notes-sidebar-empty">No notes yet.<br>Use <strong>+</strong> for a simple note or <strong>Md</strong> for markdown.</div>';
+      return;
     }
-    html += '</div>';
-    html += '<div class="sidebar-divider"></div>';
-
-    if (notes.length) {
-      const colorMap = { yellow: '#fff3b0', green: '#b5e6b5', blue: '#b5d6f0', pink: '#f0c4d8', lavender: '#d4c4f0', peach: '#fad4b5', mint: '#b5e6d4', coral: '#f5b8b0' };
-      html += notes.map(n => {
-        const dotColor = colorMap[n.color] || colorMap.yellow;
-        const displayText = getNotePreviewText(n);
-        const time = new Date(n.created).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-        return `
-          <div class="notes-sidebar-item" draggable="true" data-id="${n.id}">
-            <div class="toggle-track ${n.visible ? 'on' : ''}" data-toggle-id="${n.id}"></div>
-            <div class="item-color-dot" style="background:${dotColor}"></div>
-            <div class="item-info">
-              <div class="item-title">${displayText.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m] || m)}</div>
-              <div class="item-time">${time}</div>
-            </div>
-            <button class="item-delete-sidebar" data-delete-id="${n.id}">✕</button>
-          </div>`;
-      }).join('');
-    } else {
-      html += '<div class="notes-sidebar-empty">No notes yet.<br>Use <strong>+</strong> for a simple note or <strong>Md</strong> for markdown.</div>';
-    }
-
-    listEl.innerHTML = html;
-
-    if (canvases.length > 1) {
-      document.querySelectorAll('.canvas-item').forEach(el => {
-        el.addEventListener('dragover', (e) => {
-          e.preventDefault();
-          e.dataTransfer.dropEffect = 'move';
-          el.classList.add('drag-over');
-        });
-        el.addEventListener('dragleave', () => el.classList.remove('drag-over'));
-        el.addEventListener('drop', (e) => {
-          e.preventDefault();
-          el.classList.remove('drag-over');
-          const noteId = e.dataTransfer.getData('text/note');
-          const targetCanvasId = el.dataset.canvasId;
-          if (!noteId || !targetCanvasId || targetCanvasId === currentCanvasId) return;
-          const noteIdx = notes.findIndex(n => n.id === noteId);
-          if (noteIdx < 0) return;
-          const [note] = notes.splice(noteIdx, 1);
-          const target = canvases.find(c => c.id === targetCanvasId);
-          if (!target) { notes.splice(noteIdx, 0, note); return; }
-          target.notes.unshift(note);
-          saveCanvasData();
-          renderStickyNotes();
-          renderSidebar();
-        });
-      });
-      document.querySelectorAll('.notes-sidebar-item[draggable="true"]').forEach(el => {
-        el.addEventListener('dragstart', (e) => {
-          e.dataTransfer.setData('text/note', el.dataset.id);
-          e.dataTransfer.effectAllowed = 'move';
-          el.classList.add('dragging');
-        });
-        el.addEventListener('dragend', () => el.classList.remove('dragging'));
-      });
-    }
+    const colorMap = { yellow: '#fff3b0', green: '#b5e6b5', blue: '#b5d6f0', pink: '#f0c4d8', lavender: '#d4c4f0', peach: '#fad4b5', mint: '#b5e6d4', coral: '#f5b8b0' };
+    listEl.innerHTML = notes.map(n => {
+      const dotColor = colorMap[n.color] || colorMap.yellow;
+      const displayText = getNotePreviewText(n);
+      const time = new Date(n.created).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+      return `
+        <div class="notes-sidebar-item" data-id="${n.id}">
+          <div class="toggle-track ${n.visible ? 'on' : ''}" data-toggle-id="${n.id}"></div>
+          <div class="item-color-dot" style="background:${dotColor}"></div>
+          <div class="item-info">
+            <div class="item-title">${displayText.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m] || m)}</div>
+            <div class="item-time">${time}</div>
+          </div>
+          <button class="item-delete-sidebar" data-delete-id="${n.id}">✕</button>
+        </div>`;
+    }).join('');
   }
 
   function normalizeCodeLang(lang) {
@@ -3178,22 +2447,19 @@ def greet(name):
       el.style.left = n.x + 'px';
       el.style.top = n.y + 'px';
       el.style.width = (n.w || 220) + 'px';
-      el.style.height = (n.h || 180) + 'px';
+      el.style.minHeight = (n.h || 140) + 'px';
       el.style.zIndex = String(n.z || 60);
-      el.style.setProperty('--note-scroll-thumb', darkenColor(n.color, 0.35));
       el.style.animationDelay = (i * 0.06) + 's';
       if (!n.visible) el.classList.add('hidden');
 
       const time = new Date(n.created).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 
-      const dirs = ['n','s','e','w','ne','nw','se','sw'];
-      const handleHTML = dirs.map(d => `<div class="note-resize-handle ${d}" data-resize="${n.id}" data-dir="${d}"></div>`).join('');
       el.innerHTML = `
         <button class="draggable-note-delete" data-id="${n.id}">✕</button>
-        ${n.format === 'markdown' ? `<button class="note-edit-btn" data-edit-id="${n.id}">✏️</button>` : ''}
+        <button class="note-edit-btn" data-edit-id="${n.id}">✏️</button>
         <div class="draggable-note-time">${time}</div>
         <div class="draggable-note-text ${n.format === 'markdown' ? 'note-markdown' : 'note-plain'}" data-text-id="${n.id}">${renderNoteContent(n)}</div>
-        ${handleHTML}`;
+        <div class="note-resize-handle" data-resize="${n.id}"></div>`;
 
       el.addEventListener('mousedown', (e) => {
         if (e.target.closest('.draggable-note-delete') || e.target.closest('.note-resize-handle') || e.target.closest('.note-edit-btn')) return;
@@ -3210,28 +2476,14 @@ def greet(name):
         };
       });
 
-      el.querySelectorAll('.note-resize-handle').forEach(h => {
-        h.addEventListener('mousedown', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          bringNoteToFront(el);
-          const rect = el.getBoundingClientRect();
-          dragState = {
-            type: 'resize', dir: h.dataset.dir, el,
-            startX: e.clientX, startY: e.clientY,
-            origW: rect.width, origH: rect.height,
-            origX: rect.left, origY: rect.top,
-          };
-          el.classList.add('resizing');
-        });
-      });
-
-      const textEl = el.querySelector('.draggable-note-text');
-      textEl.addEventListener('dblclick', (e) => {
+      const resizeHandle = el.querySelector('.note-resize-handle');
+      resizeHandle.addEventListener('mousedown', (e) => {
+        e.preventDefault();
         e.stopPropagation();
-        if (!textEl.classList.contains('editing')) {
-          enterEditMode(textEl);
-        }
+        bringNoteToFront(el);
+        const rect = el.getBoundingClientRect();
+        dragState = { type: 'resize', el, startX: e.clientX, startY: e.clientY, origW: rect.width, origH: rect.height };
+        el.classList.add('resizing');
       });
 
       document.body.appendChild(el);
@@ -3256,27 +2508,10 @@ def greet(name):
     } else if (dragState.type === 'resize') {
       const dw = e.clientX - dragState.startX;
       const dh = e.clientY - dragState.startY;
-      const dir = dragState.dir;
-      const MIN_W = 80, MIN_H = 50;
-      let newW, newH, newX, newY;
-      if (dir.includes('e')) { newW = dragState.origW + dw; newX = dragState.origX; }
-      if (dir.includes('w')) { newW = dragState.origW - dw; newX = dragState.origX + dw; }
-      if (dir.includes('s')) { newH = dragState.origH + dh; newY = dragState.origY; }
-      if (dir.includes('n')) { newH = dragState.origH - dh; newY = dragState.origY + dh; }
-      if (!dir.includes('e') && !dir.includes('w')) { newW = dragState.origW; newX = dragState.origX; }
-      if (!dir.includes('s') && !dir.includes('n')) { newH = dragState.origH; newY = dragState.origY; }
-      if (newW < MIN_W) {
-        if (dir.includes('w')) newX = dragState.origX + dragState.origW - MIN_W;
-        newW = MIN_W;
-      }
-      if (newH < MIN_H) {
-        if (dir.includes('n')) newY = dragState.origY + dragState.origH - MIN_H;
-        newH = MIN_H;
-      }
-      dragState.el.style.left = newX + 'px';
-      dragState.el.style.top = newY + 'px';
+      const newW = Math.max(160, dragState.origW + dw);
+      const newH = Math.max(100, dragState.origH + dh);
       dragState.el.style.width = newW + 'px';
-      dragState.el.style.height = newH + 'px';
+      dragState.el.style.minHeight = newH + 'px';
     }
   });
 
@@ -3291,9 +2526,9 @@ def greet(name):
       note.y = parseFloat(dragState.el.style.top);
       if (dragState.type === 'resize') {
         note.w = parseFloat(dragState.el.style.width);
-        note.h = parseFloat(dragState.el.style.height);
+        note.h = parseFloat(dragState.el.style.minHeight);
       }
-      saveCanvasData();
+      saveNotes();
     }
     dragState = null;
   });
@@ -3303,7 +2538,6 @@ def greet(name):
     container.classList.add('visible');
     overlay.classList.add('visible');
     input.value = '';
-    lastSlashCmd = null;
     input.focus();
     list.classList.remove('visible');
     clear.classList.remove('visible');
@@ -3316,13 +2550,12 @@ def greet(name):
     overlay.classList.remove('visible');
     list.classList.remove('visible');
     if (chatAbortController) { chatAbortController.abort(); chatAbortController = null; }
-    lastSlashCmd = null;
     input.blur();
   }
 
   function execute(cmd) {
     if (!cmd._skipHistory) pushHistory(cmd.id);
-    if (cmd.id === 'ask-ai' || cmd.isChat) {
+    if (cmd.id === 'ask-ai') {
       cmd.action();
       return;
     }
@@ -3360,7 +2593,7 @@ def greet(name):
           </div>
           <div class="result-meta">
             <span class="history-badge">recent</span>
-           <!--  <span class="result-shortcut">${(cmd.shortcut||[]).map(k => `<kbd>${k}</kbd>`).join('')}</span> -->
+            <span class="result-shortcut">${(cmd.shortcut||[]).map(k => `<kbd>${k}</kbd>`).join('')}</span>
           </div>
         </li>
       `).join('');
@@ -3419,8 +2652,8 @@ def greet(name):
         </div>
         <div class="result-meta">
           ${cmd.isHistory ? '<span class="history-badge">recent</span>' : ''}
-         <!--   <span class="result-score">${(cmd.fuzzyScore * 100).toFixed(0)}%</span> -->
-         <!-- <span class="result-shortcut">${(cmd.shortcut||[]).map(k => `<kbd>${k}</kbd>`).join('')}</span> -->
+          <span class="result-score">${(cmd.fuzzyScore * 100).toFixed(0)}%</span>
+          <span class="result-shortcut">${(cmd.shortcut||[]).map(k => `<kbd>${k}</kbd>`).join('')}</span>
         </div>
       </li>`;
     }).join('');
@@ -3476,7 +2709,6 @@ def greet(name):
       updateActiveItem();
     } else if (e.key === 'Enter') {
       e.preventDefault();
-      if (selectedIndex < 0 && currentResults.length > 0) selectedIndex = 0;
       if (selectedIndex >= 0) selectItem(selectedIndex);
     } else if (e.key === 'Escape') {
       closeSearch();
@@ -3503,14 +2735,9 @@ def greet(name):
         btn.textContent = 'Copied!';
         setTimeout(() => { btn.textContent = 'Copy'; }, 1500);
       } else if (action === 'retry') {
-        if (lastSlashCmd) {
-          doChat(lastSlashCmd.prompt, lastSlashCmd.systemPrompt, lastSlashCmd.label);
-        } else {
-          const prompt = input.value.trim();
-          if (prompt) doChat(prompt);
-        }
+        const prompt = list.querySelector('.chat-bubble.user')?.textContent?.replace(/^You\n/, '') || input.value;
+        if (prompt) doChat(prompt);
       } else if (action === 'back') {
-        lastSlashCmd = null;
         if (input.value.trim()) render(input.value);
         else renderRecent();
       }
@@ -3523,7 +2750,6 @@ def greet(name):
 
   clear.addEventListener('click', () => {
     input.value = '';
-    lastSlashCmd = null;
     input.focus();
     clear.classList.remove('visible');
     renderRecent();
@@ -3554,7 +2780,7 @@ def greet(name):
     const note = notes.find(n => n.id === id);
     if (note) {
       note.text = textEl.textContent || '';
-      saveCanvasData();
+      saveNotes();
       textEl.innerHTML = renderNoteContent(note);
     }
     const editBtn = noteEl.querySelector('.note-edit-btn');
@@ -3575,27 +2801,7 @@ def greet(name):
     if (editBtn) editBtn.classList.add('editing');
   }
 
-  document.addEventListener('click', async (e) => {
-    if (e.target.id === 'canvasAddBtn') {
-      const name = prompt('Canvas name:', 'Canvas ' + (canvases.length + 1));
-      if (name && name.trim()) addCanvas(name.trim());
-      return;
-    }
-    if (!e.target.closest('.color-palette-popup') && paletteOpen) {
-      closeColorPalette();
-    }
-    const colorBtn = e.target.closest('.canvas-color-btn');
-    if (colorBtn && colorBtn.dataset.colorId) {
-      if (paletteOpen) { closeColorPalette(); return; }
-      openColorPalette(colorBtn.dataset.colorId);
-      return;
-    }
-    const paletteSwatch = e.target.closest('.color-palette-swatch');
-    if (paletteSwatch && paletteSwatch.dataset.color && paletteTargetCanvas) {
-      setCanvasBg(paletteTargetCanvas, paletteSwatch.dataset.color);
-      closeColorPalette();
-      return;
-    }
+  document.addEventListener('click', (e) => {
     const editBtn = e.target.closest('.note-edit-btn');
     if (editBtn) {
       const noteEl = editBtn.closest('.draggable-note');
@@ -3614,17 +2820,6 @@ def greet(name):
       toggleNoteVisibility(toggleTrack.dataset.toggleId);
       return;
     }
-    const renameBtn = e.target.closest('.canvas-rename-btn');
-    if (renameBtn && renameBtn.dataset.renameId) {
-      const c = canvases.find(c => c.id === renameBtn.dataset.renameId);
-      if (c) {
-        const name = prompt('Rename canvas:', c.name);
-        if (name && name.trim() && name.trim() !== c.name) {
-          renameCanvas(c.id, name.trim());
-        }
-      }
-      return;
-    }
     const deleteSidebar = e.target.closest('.item-delete-sidebar');
     if (deleteSidebar && deleteSidebar.dataset.deleteId) {
       requestDeleteNote(deleteSidebar.dataset.deleteId);
@@ -3633,28 +2828,6 @@ def greet(name):
     const deleteBtn = e.target.closest('.draggable-note-delete');
     if (deleteBtn) {
       requestDeleteNote(deleteBtn.dataset.id);
-      return;
-    }
-    const canvasDeleteBtn = e.target.closest('.canvas-delete-btn');
-    if (canvasDeleteBtn && canvasDeleteBtn.dataset.canvasId) {
-      const cid = canvasDeleteBtn.dataset.canvasId;
-      const c = canvases.find(c => c.id === cid);
-      if (c && canvases.length > 1) {
-        const ok = await showConfirmDialog({
-          title: 'Delete canvas?',
-          message: `"${escapeHtml(c.name)}" and all its notes will be permanently removed.`,
-          confirmLabel: 'Delete',
-        });
-        if (ok) removeCanvas(cid);
-      }
-      return;
-    }
-    const canvasItem = e.target.closest('.canvas-item');
-    if (canvasItem && canvasItem.dataset.canvasId) {
-      const cid = canvasItem.dataset.canvasId;
-      if (cid !== currentCanvasId) {
-        switchCanvas(cid);
-      }
       return;
     }
     const previewItem = e.target.closest('[data-note-id]');
@@ -3672,27 +2845,20 @@ def greet(name):
 
   document.addEventListener('input', (e) => {
     const el = e.target.closest('.draggable-note-text');
-    if (el) {
-      const noteEl = el.closest('.draggable-note');
-      if (noteEl) {
-        const id = noteEl.dataset.id;
-        const note = notes.find(n => n.id === id);
-        if (note && el.classList.contains('editing')) {
-          note.text = el.textContent || '';
-          saveCanvasData();
-        }
-      }
-      return;
+    if (!el) return;
+    const noteEl = el.closest('.draggable-note');
+    if (!noteEl) return;
+    const id = noteEl.dataset.id;
+    const note = notes.find(n => n.id === id);
+    if (note && el.classList.contains('editing')) {
+      note.text = el.textContent || '';
+      saveNotes();
     }
   });
 
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && document.getElementById('confirmDialogOverlay').classList.contains('visible')) {
       hideConfirmDialog(false);
-      return;
-    }
-    if (e.key === 'Escape' && paletteOpen) {
-      closeColorPalette();
       return;
     }
     if (e.key === 'Escape' && sidebarOpen) {
@@ -3709,8 +2875,6 @@ def greet(name):
     }
   });
 
-  const initialCanvas = getCurrentCanvas();
-  if (initialCanvas && initialCanvas.bg) applyCanvasBg(initialCanvas.bg);
   renderStickyNotes();
 </script>
 </body>
