@@ -875,6 +875,25 @@
       margin-top: 1px;
     }
 
+    .notes-sidebar-item .item-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 3px;
+      margin-top: 4px;
+    }
+
+    .notes-sidebar-item .item-tag {
+      font-size: 8px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      padding: 1px 6px;
+      border-radius: 8px;
+      background: rgba(0,0,0,0.06);
+      color: rgba(0,0,0,0.5);
+      text-transform: lowercase;
+      line-height: 1.4;
+    }
+
     .notes-sidebar-item .item-delete-sidebar {
       flex-shrink: 0;
       width: 24px;
@@ -2013,6 +2032,17 @@
       color: rgba(0,0,0,0.5);
     }
 
+    .toast-tag {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 8px;
+      background: rgba(0,0,0,0.06);
+      color: rgba(0,0,0,0.5);
+      margin: 1px 2px;
+    }
+
     .toast.removing {
       animation: toastOut 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
     }
@@ -2083,6 +2113,159 @@
       margin: 4px 10px;
     }
 
+    .note-tag-btn {
+      position: absolute;
+      top: 6px;
+      right: 80px;
+      width: 22px;
+      height: 22px;
+      border: none;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.08);
+      color: rgba(0,0,0,0.35);
+      font-size: 11px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.15s, background 0.15s;
+    }
+
+    .draggable-note:hover .note-tag-btn {
+      opacity: 1;
+    }
+
+    .note-tag-btn:hover {
+      background: rgba(0,0,0,0.15);
+      color: rgba(0,0,0,0.6);
+    }
+
+    .note-tag-btn.active {
+      opacity: 1;
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .draggable-note-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: auto;
+      min-height: 0;
+    }
+
+    .note-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      padding: 2px 7px;
+      border-radius: 10px;
+      background: rgba(0,0,0,0.07);
+      color: rgba(0,0,0,0.6);
+      text-transform: lowercase;
+      cursor: default;
+      line-height: 1.3;
+      pointer-events: auto;
+    }
+
+    .note-tag-remove {
+      width: 12px;
+      height: 12px;
+      border: none;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.1);
+      color: rgba(0,0,0,0.4);
+      font-size: 7px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      line-height: 1;
+      transition: background 0.1s, color 0.1s;
+    }
+
+    .note-tag-remove:hover {
+      background: rgba(0,0,0,0.2);
+      color: rgba(0,0,0,0.7);
+    }
+
+    .tag-popup {
+      position: fixed;
+      z-index: 100000;
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(30px);
+      -webkit-backdrop-filter: blur(30px);
+      border: 0.5px solid rgba(0,0,0,0.06);
+      border-radius: 14px;
+      padding: 12px 14px 10px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06);
+      min-width: 180px;
+      max-width: 240px;
+      opacity: 0;
+      transform: scale(0.96);
+      pointer-events: none;
+      transition: opacity 0.12s ease, transform 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .tag-popup.visible {
+      opacity: 1;
+      transform: scale(1);
+      pointer-events: auto;
+    }
+
+    .tag-popup-header {
+      font-size: 11px;
+      font-weight: 600;
+      color: rgba(0,0,0,0.4);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 8px;
+    }
+
+    .tag-popup-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-bottom: 8px;
+      min-height: 0;
+    }
+
+    .tag-popup-tags:empty {
+      margin-bottom: 0;
+    }
+
+    .tag-popup .note-tag {
+      font-size: 10px;
+      padding: 3px 8px;
+    }
+
+    .tag-popup-input {
+      width: 100%;
+      border: none;
+      background: rgba(0,0,0,0.05);
+      border-radius: 8px;
+      padding: 7px 10px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 500;
+      color: #1c1c1e;
+      outline: none;
+      transition: background 0.12s;
+    }
+
+    .tag-popup-input:focus {
+      background: rgba(0,0,0,0.08);
+    }
+
+    .tag-popup-input::placeholder {
+      color: rgba(0,0,0,0.25);
+    }
+
     @media (prefers-color-scheme: dark) {
       .toast {
         background: rgba(40,40,48,0.88);
@@ -2091,6 +2274,7 @@
       }
       .toast-dismiss { color: rgba(255,255,255,0.3); }
       .toast-dismiss:hover { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.5); }
+      .toast-tag { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.5); }
       .find-highlight {
         background: rgba(255, 200, 0, 0.5);
         box-shadow: 0 0 0 1px rgba(255, 200, 0, 0.3);
@@ -2102,6 +2286,33 @@
       .context-menu-item { color: #f5f5f7; }
       .context-menu-item:hover { background: rgba(255,255,255,0.08); }
       .context-menu-divider { background: rgba(255,255,255,0.08); }
+      .notes-sidebar-item .item-tag {
+        background: rgba(255,255,255,0.08);
+        color: rgba(255,255,255,0.5);
+      }
+      .note-tag {
+        background: rgba(255,255,255,0.1);
+        color: rgba(255,255,255,0.65);
+      }
+      .note-tag-remove {
+        background: rgba(255,255,255,0.12);
+        color: rgba(255,255,255,0.45);
+      }
+      .note-tag-remove:hover {
+        background: rgba(255,255,255,0.22);
+        color: rgba(255,255,255,0.75);
+      }
+      .tag-popup {
+        background: rgba(40,40,48,0.92);
+        border-color: rgba(255,255,255,0.06);
+      }
+      .tag-popup-header { color: rgba(255,255,255,0.4); }
+      .tag-popup-input {
+        background: rgba(255,255,255,0.08);
+        color: #f5f5f7;
+      }
+      .tag-popup-input:focus { background: rgba(255,255,255,0.12); }
+      .tag-popup-input::placeholder { color: rgba(255,255,255,0.25); }
     }
   </style>
 </head>
@@ -2134,6 +2345,12 @@
 <div class="toast-container" id="toastContainer"></div>
 
 <div class="context-menu" id="contextMenu"></div>
+
+<div class="tag-popup" id="tagPopup">
+  <div class="tag-popup-header">Tags</div>
+  <div class="tag-popup-tags" id="tagPopupTags"></div>
+  <input type="text" class="tag-popup-input" id="tagPopupInput" placeholder="Add tag..." spellcheck="false">
+</div>
 
 <div class="search-container" id="searchContainer">
   <div class="search-wrapper">
@@ -2255,6 +2472,33 @@ def greet(name):
           setTimeout(() => exportNotes(sc.id), 200);
           return;
         }
+        if (sc.id === 'tag') {
+          closeSearch();
+          if (restText) {
+            setTimeout(() => {
+              notes.forEach(n => addTagToNote(n.id, restText));
+              renderStickyNotes();
+              renderSidebar();
+              showToast(`Tag "${escapeHtml(restText)}" added to all ${notes.length} notes`);
+            }, 200);
+          }
+          return;
+        }
+        if (sc.id === 'tags') {
+          closeSearch();
+          setTimeout(() => {
+            const tagMap = {};
+            notes.forEach(n => {
+              (n.tags || []).forEach(t => { tagMap[t] = (tagMap[t] || 0) + 1; });
+            });
+            const keys = Object.keys(tagMap);
+            if (!keys.length) { showToast('No tags on this canvas'); return; }
+            const sorted = keys.sort((a,b) => tagMap[b] - tagMap[a]);
+            const html = sorted.map(t => `<span class="toast-tag">${escapeHtml(t)} (${tagMap[t]})</span>`).join(' ');
+            showToast(`<strong>Tags:</strong> ${html}`, 5000);
+          }, 200);
+          return;
+        }
         if (restText) {
           pushHistory(sc.id);
           doChatToNote(restText, sc.systemPrompt, sc.label);
@@ -2299,6 +2543,8 @@ def greet(name):
     { id: 'export-md',  trigger: '/export-md',  label: 'Export as Markdown', icon: '\uD83D\uDCDD', color: '#34c759', description: 'Export all notes as a single Markdown file' },
     { id: 'export-json',trigger: '/export-json',label: 'Export as JSON',     icon: '\u2699\uFE0F', color: '#007aff', description: 'Download full canvas data as JSON backup' },
     { id: 'export-html',trigger: '/export-html',label: 'Export as HTML',     icon: '\uD83C\uDF10', color: '#bf5af2', description: 'Snapshot notes with positions as a standalone HTML page' },
+    { id: 'tag',        trigger: '/tag',        label: 'Tag Note',    icon: '\uD83C\uDFF7', color: '#ff9500', description: 'Add a tag to a note (e.g. /tag <note-id> <tagname>)' },
+    { id: 'tags',       trigger: '/tags',       label: 'Show Tags',   icon: '\uD83C\uDFF7', color: '#34c759', description: 'List all tags and notes they are attached to' },
   ];
 
   let lastSlashCmd = null;
@@ -2542,6 +2788,29 @@ def greet(name):
             if (sc.id === 'export-md' || sc.id === 'export-json' || sc.id === 'export-html') {
               closeSearch();
               exportNotes(sc.id);
+              return;
+            }
+            if (sc.id === 'tag') {
+              closeSearch();
+              if (restText) {
+                notes.forEach(n => addTagToNote(n.id, restText));
+                renderStickyNotes();
+                renderSidebar();
+                showToast(`Tag "${escapeHtml(restText)}" added to all ${notes.length} notes`);
+              }
+              return;
+            }
+            if (sc.id === 'tags') {
+              closeSearch();
+              const tagMap = {};
+              notes.forEach(n => {
+                (n.tags || []).forEach(t => { tagMap[t] = (tagMap[t] || 0) + 1; });
+              });
+              const keys = Object.keys(tagMap);
+              if (!keys.length) { showToast('No tags on this canvas'); return; }
+              const sorted = keys.sort((a,b) => tagMap[b] - tagMap[a]);
+              const html = sorted.map(t => `<span class="toast-tag">${escapeHtml(t)} (${tagMap[t]})</span>`).join(' ');
+              showToast(`<strong>Tags:</strong> ${html}`, 5000);
               return;
             }
             if (restText) {
@@ -2995,6 +3264,7 @@ def greet(name):
       format,
       z: getNextNoteZ(),
       color: getRandomColor(),
+      tags: [],
       created: Date.now(),
       visible: true,
       x: x ?? (60 + Math.random() * 200),
@@ -3176,6 +3446,7 @@ def greet(name):
             <div class="item-info">
               <div class="item-title">${displayText.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m] || m)}</div>
               <div class="item-time">${time}</div>
+              ${n.tags && n.tags.length ? `<div class="item-tags">${n.tags.map(t => `<span class="item-tag">${t.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m] || m)}</span>`).join('')}</div>` : ''}
             </div>
             <button class="item-delete-sidebar" data-delete-id="${n.id}">✕</button>
           </div>`;
@@ -3451,7 +3722,7 @@ def greet(name):
     renderStickyNotes();
   }
 
-  function showToast(message) {
+  function showToast(message, duration) {
     const container = document.getElementById('toastContainer');
     const el = document.createElement('div');
     el.className = 'toast';
@@ -3477,7 +3748,7 @@ def greet(name):
         el.classList.add('removing');
         setTimeout(() => el.remove(), 250);
       }
-    }, 4000);
+    }, duration || 4000);
   }
 
   function downloadFile(content, filename, mimeType) {
@@ -3639,10 +3910,10 @@ def greet(name):
     const canvas = getCurrentCanvas();
     const cx = e.clientX, cy = e.clientY;
     menu.innerHTML = `
-      <div class="context-menu-item" data-action="simple" data-x="${cx}" data-y="${cy}"><span class="ctx-icon">+</span> New Simple Note</div>
-      <div class="context-menu-item" data-action="markdown" data-x="${cx}" data-y="${cy}"><span class="ctx-icon">Md</span> New Markdown Note</div>
+      <div class="context-menu-item" data-action="simple" data-x="${cx}" data-y="${cy}"><!--<span class="ctx-icon">+</span>--> New Simple Note</div>
+      <div class="context-menu-item" data-action="markdown" data-x="${cx}" data-y="${cy}"><!--<span class="ctx-icon">Md</span> -->New Markdown Note</div>
       <div class="context-menu-divider"></div>
-      <div class="context-menu-item" data-action="bg"><span class="ctx-icon">🎨</span> Change Background</div>
+      <div class="context-menu-item" data-action="bg"><!--<span class="ctx-icon">🎨</span>--> Change Background</div>
     `;
     const rect = menu.getBoundingClientRect();
     const maxX = window.innerWidth - rect.width - 8;
@@ -3654,6 +3925,63 @@ def greet(name):
 
   function closeContextMenu() {
     document.getElementById('contextMenu').classList.remove('visible');
+  }
+
+  let tagPopupNoteId = null;
+
+  function openTagPopup(noteId, anchorEl) {
+    closeTagPopup();
+    tagPopupNoteId = noteId;
+    const note = notes.find(n => n.id === noteId);
+    if (!note) return;
+    const popup = document.getElementById('tagPopup');
+    const tagsEl = document.getElementById('tagPopupTags');
+    const input = document.getElementById('tagPopupInput');
+    tagsEl.innerHTML = (note.tags || []).map(t =>
+      `<span class="note-tag">${escapeHtml(t)}<button class="note-tag-remove" data-tag-rm="${noteId}" data-tag-name="${t}">✕</button></span>`
+    ).join('');
+    input.value = '';
+    const rect = anchorEl.getBoundingClientRect();
+    let top = rect.top - popup.offsetHeight - 8;
+    let left = rect.left;
+    if (top < 8) top = rect.bottom + 8;
+    popup.style.left = left + 'px';
+    popup.style.top = top + 'px';
+    popup.classList.add('visible');
+    requestAnimationFrame(() => input.focus());
+  }
+
+  function closeTagPopup() {
+    document.getElementById('tagPopup').classList.remove('visible');
+    tagPopupNoteId = null;
+  }
+
+  function addTagToNote(noteId, tagName) {
+    const note = notes.find(n => n.id === noteId);
+    if (!note) return;
+    const tag = tagName.trim().toLowerCase().replace(/[^a-zA-Z0-9 _-]/g, '');
+    if (!tag || (note.tags || []).includes(tag)) return;
+    if (!note.tags) note.tags = [];
+    note.tags.push(tag);
+    saveCanvasData();
+    renderStickyNotes();
+    renderSidebar();
+    if (tagPopupNoteId === noteId) {
+      openTagPopup(noteId, document.querySelector(`.note-tag-btn[data-tag-id="${noteId}"]`));
+    }
+  }
+
+  function removeTagFromNote(noteId, tagName) {
+    const note = notes.find(n => n.id === noteId);
+    if (!note || !note.tags) return;
+    note.tags = note.tags.filter(t => t !== tagName);
+    saveCanvasData();
+    renderStickyNotes();
+    renderSidebar();
+    if (tagPopupNoteId === noteId) {
+      const anchor = document.querySelector(`.note-tag-btn[data-tag-id="${noteId}"]`);
+      if (anchor) openTagPopup(noteId, anchor);
+    }
   }
 
   function enterFocusMode(noteId) {
@@ -3732,12 +4060,14 @@ def greet(name):
         <button class="draggable-note-delete" data-id="${n.id}">✕</button>
         ${n.format === 'markdown' ? `<button class="note-edit-btn" data-edit-id="${n.id}">✏️</button>` : ''}
         <button class="note-focus-btn" data-focus-id="${n.id}" title="Focus mode">⊙</button>
+        <button class="note-tag-btn" data-tag-id="${n.id}" title="Tags">#</button>
         <div class="draggable-note-time">${time}</div>
         <div class="draggable-note-text ${n.format === 'markdown' ? 'note-markdown' : 'note-plain'}" data-text-id="${n.id}">${renderNoteContent(n)}</div>
+        ${n.tags && n.tags.length ? `<div class="draggable-note-tags">${n.tags.map(t => `<span class="note-tag" data-tag-name="${t}">${escapeHtml(t)}<button class="note-tag-remove" data-tag-rm="${n.id}" data-tag-name="${t}">✕</button></span>`).join('')}</div>` : ''}
         ${handleHTML}`;
 
       el.addEventListener('mousedown', (e) => {
-        if (e.target.closest('.draggable-note-delete') || e.target.closest('.note-resize-handle') || e.target.closest('.note-edit-btn') || e.target.closest('.note-focus-btn')) return;
+        if (e.target.closest('.draggable-note-delete') || e.target.closest('.note-resize-handle') || e.target.closest('.note-edit-btn') || e.target.closest('.note-focus-btn') || e.target.closest('.note-tag-btn')) return;
         if (e.target.closest('.draggable-note-text.editing')) return;
         if (e.button !== 0) return;
 
@@ -4088,6 +4418,20 @@ def greet(name):
     if (e.target === e.currentTarget) hideConfirmDialog(false);
   });
 
+  document.getElementById('tagPopupInput').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const input = e.target;
+      const tag = input.value.trim();
+      if (tag && tagPopupNoteId) {
+        addTagToNote(tagPopupNoteId, tag);
+      }
+    }
+    if (e.key === 'Escape') {
+      closeTagPopup();
+    }
+  });
+
   function exitEditMode(textEl) {
     const noteEl = textEl.closest('.draggable-note');
     if (!noteEl) return;
@@ -4119,7 +4463,7 @@ def greet(name):
   }
 
   document.addEventListener('contextmenu', (e) => {
-    if (e.target.closest('.draggable-note') || e.target.closest('.search-container') || e.target.closest('.notes-sidebar') || e.target.closest('.notes-sidebar-overlay') || e.target.closest('.confirm-dialog-overlay') || e.target.closest('.toast-container') || e.target.closest('.context-menu')) return;
+    if (e.target.closest('.draggable-note') || e.target.closest('.search-container') || e.target.closest('.notes-sidebar') || e.target.closest('.notes-sidebar-overlay') || e.target.closest('.confirm-dialog-overlay') || e.target.closest('.toast-container') || e.target.closest('.context-menu') || e.target.closest('.tag-popup')) return;
     showContextMenu(e);
   });
 
@@ -4213,6 +4557,23 @@ def greet(name):
       exitFocusMode();
       return;
     }
+    if (!e.target.closest('.tag-popup') && tagPopupNoteId) {
+      closeTagPopup();
+    }
+    const tagRmBtn = e.target.closest('.note-tag-remove');
+    if (tagRmBtn && tagRmBtn.dataset.tagRm) {
+      removeTagFromNote(tagRmBtn.dataset.tagRm, tagRmBtn.dataset.tagName);
+      return;
+    }
+    const tagBtn = e.target.closest('.note-tag-btn');
+    if (tagBtn && tagBtn.dataset.tagId) {
+      if (tagPopupNoteId === tagBtn.dataset.tagId) {
+        closeTagPopup();
+      } else {
+        openTagPopup(tagBtn.dataset.tagId, tagBtn);
+      }
+      return;
+    }
     const deleteBtn = e.target.closest('.draggable-note-delete');
     if (deleteBtn) {
       requestDeleteNote(deleteBtn.dataset.id);
@@ -4276,6 +4637,10 @@ def greet(name):
     }
     if (e.key === 'Escape' && document.getElementById('contextMenu').classList.contains('visible')) {
       closeContextMenu();
+      return;
+    }
+    if (e.key === 'Escape' && tagPopupNoteId) {
+      closeTagPopup();
       return;
     }
     if (e.key === 'Escape' && paletteOpen) {
