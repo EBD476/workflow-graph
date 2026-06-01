@@ -664,7 +664,7 @@
     .notes-sidebar-overlay {
       position: fixed;
       inset: 0;
-      z-index: 150;
+      z-index: 9999;
       background: rgba(0,0,0,0.2);
       backdrop-filter: blur(4px);
       -webkit-backdrop-filter: blur(4px);
@@ -1205,7 +1205,7 @@
       min-height: 50px;
       border-radius: var(--radius-sm);
       padding: 16px;
-      padding-bottom: 20px;
+      padding-bottom: 15px;
       display: flex;
       flex-direction: column;
       gap: 8px;
@@ -1646,13 +1646,13 @@
       position: absolute;
       top: 6px;
       right: 32px;
-      width: 22px;
-      height: 22px;
+      width: 20px;
+      height: 20px;
       border: none;
       border-radius: 50%;
       background: rgba(0,0,0,0.08);
       color: rgba(0,0,0,0.35);
-      font-size: 11px;
+      font-size: 10px;
       cursor: pointer;
       display: flex;
       align-items: center;
@@ -2153,6 +2153,8 @@
       gap: 4px;
       margin-top: auto;
       min-height: 0;
+      position: absolute;
+      bottom: 8px;
     }
 
     .note-tag {
@@ -3422,7 +3424,7 @@ def greet(name):
       html += `<div class="canvas-item${isActive ? ' active' : ''}" data-canvas-id="${c.id}">`;
       html +=   `<span class="canvas-indicator">${isActive ? '\u25CF' : '\u25CB'}</span>`;
       html +=   `<span class="canvas-name">${safeName}</span>`;
-      html +=   `<button class="canvas-rename-btn" data-rename-id="${c.id}" title="Rename canvas">\u270F\uFE0F</button>`;
+      html +=   `<button class="canvas-rename-btn" data-rename-id="${c.id}" title="Rename canvas">✎</button>`;
       html +=   `<button class="canvas-color-btn" data-color-id="${c.id}" title="Change background" style="--dot-color:${c.bg || '#171f49'}"></button>`;
       html +=   `<span class="canvas-count">${noteCount}</span>`;
       if (canvases.length > 1) {
@@ -3702,7 +3704,7 @@ def greet(name):
         wordCount += (n.text.match(re) || []).length;
       }
     });
-    showToast(`🔍 Found ${wordCount} match${wordCount !== 1 ? 'es' : ''} in ${noteCount} note${noteCount !== 1 ? 's' : ''} for "${trimmed}"`);
+    showToast(`🔍︎ Found ${wordCount} match${wordCount !== 1 ? 'es' : ''} in ${noteCount} note${noteCount !== 1 ? 's' : ''} for "${trimmed}"`);
     requestAnimationFrame(() => {
       document.querySelectorAll('.draggable-note-text').forEach(textEl => {
         const mark = textEl.querySelector('.find-highlight');
@@ -4058,7 +4060,7 @@ def greet(name):
       const handleHTML = dirs.map(d => `<div class="note-resize-handle ${d}" data-resize="${n.id}" data-dir="${d}"></div>`).join('');
       el.innerHTML = `
         <button class="draggable-note-delete" data-id="${n.id}">✕</button>
-        ${n.format === 'markdown' ? `<button class="note-edit-btn" data-edit-id="${n.id}">✏️</button>` : ''}
+        <button class="note-edit-btn" data-edit-id="${n.id}">✎</button>
         <button class="note-focus-btn" data-focus-id="${n.id}" title="Focus mode">⊙</button>
         <button class="note-tag-btn" data-tag-id="${n.id}" title="Tags">#</button>
         <div class="draggable-note-time">${time}</div>
