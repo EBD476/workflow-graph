@@ -1621,6 +1621,18 @@
 
     .draggable-note-text img {
       max-width: 100%;
+      height: auto;
+      border-radius: 4px;
+      margin: 4px 0;
+      display: block;
+    }
+
+    .draggable-note-text img + br {
+      display: none;
+    }
+
+    .draggable-note-text img {
+      max-width: 100%;
       border-radius: 4px;
     }
 
@@ -1780,6 +1792,16 @@
     .note-resize-handle.sw { left: -4px;  bottom: -4px; width: 14px; height: 14px; cursor: nesw-resize; background: rgba(0,0,0,0.08); border-radius: 0 0 0 4px; }
     .note-resize-handle.ne { right: -4px; top: -4px;   width: 14px; height: 14px; cursor: nesw-resize; background: rgba(0,0,0,0.08); border-radius: 0 4px 0 0; }
     .note-resize-handle.nw { left: -4px;  top: -4px;   width: 14px; height: 14px; cursor: nwse-resize; background: rgba(0,0,0,0.08); border-radius: 4px 0 0 0; }
+
+    .draggable-note[data-format="image"] {
+      padding: 10px;
+    }
+
+    .draggable-note[data-format="image"] .draggable-note-text img {
+      border-radius: 8px;
+      pointer-events: none;
+      user-select: none;
+    }
 
     @keyframes notePop {
       from { opacity: 0; transform: scale(0.9) translateY(8px); }
@@ -2409,6 +2431,7 @@
     { id: 'zen',         title: 'Toggle Zen Mode',    subtitle: 'Enter distraction-free mode',    icon: 'Z', color: '#ffcc00', shortcut: ['\u2318', 'K', 'Z'],   action: () => alert('Zen mode toggled') },
     { id: 'new-simple-note',   title: 'Simple Note',   subtitle: 'Create a plain text sticky note',      icon: 'T', color: '#ffcc00', shortcut: [], action: () => createSimpleNote(input.value.trim() || null) },
     { id: 'new-markdown-note', title: 'Markdown Note', subtitle: 'Create a note with markdown formatting', icon: 'M', color: '#bf5af2', shortcut: [], action: () => createMarkdownNote(input.value.trim() || null) },
+    { id: 'new-image-note',   title: 'Image Note',    subtitle: 'Pick an image file to create an image note', icon: '\uD83D\uDCF7', color: '#ff9500', shortcut: [], action: () => { const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*'; inp.onchange = () => { const f = inp.files[0]; if (f) { const r = new FileReader(); r.onload = e => createImageNote(e.target.result); r.readAsDataURL(f); } }; inp.click(); } },
     { id: 'view-notes',  title: 'View Notes',         subtitle: 'Show all sticky notes',          icon: '\uD83D\uDCCC', color: '#5ac8fa', shortcut: [], action: openSidebar },
     { id: 'clear-notes', title: 'Clear All Notes',    subtitle: 'Remove all sticky notes',        icon: '\u267B', color: '#ff3b30', shortcut: [], action: clearAllNotes },
     { id: 'new-canvas',  title: 'New Canvas',          subtitle: 'Create a new canvas',            icon: '+', color: '#5ac8fa', shortcut: [], action: () => addCanvas(prompt('Canvas name:', 'Canvas ' + (canvases.length + 1)) || '') },
@@ -3232,18 +3255,98 @@ def greet(name):
   }
 
   function getNotePreviewText(note) {
+    if (note.format === 'image') {
+      const caption = (note.text || '').trim();
+      return caption ? '\uD83D\uDCF7 ' + caption : '\uD83D\uDCF7 Image';
+    }
     const raw = (note.text || '').trim();
     if (!raw) return 'Empty note';
     if (note.format === 'markdown') return stripMarkdownForPreview(raw);
     return raw;
   }
 
+  const MAX_IMAGE_STORAGE = 4 * 1024 * 1024;
+
+  function getCanvasStorageSize() {
+    let total = 0;
+    for (const n of notes) {
+      if (n.text) {
+        const matches = n.text.match(/@IMG:([^@]+)@ENDIMG|!\[.*?\]\(data:([^)]+)\)/g);
+        if (matches) {
+          for (const m of matches) {
+            const b64 = m.replace(/@IMG:/, '').replace(/@ENDIMG/, '').replace(/!\[.*?\]\(data:/, '').replace(/\)$/, '');
+            total += b64.length * 0.75;
+          }
+        }
+      }
+    }
+    return total;
+  }
+
+  function handleImageFile(file, noteId) {
+    if (!file.type.startsWith('image/')) return;
+    if (getCanvasStorageSize() > MAX_IMAGE_STORAGE) {
+      alert('Image storage limit reached (~4MB). Remove some images first.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataUrl = e.target.result;
+      const note = notes.find(n => n.id === noteId);
+      if (!note) return;
+      const imgRef = note.format === 'markdown'
+        ? `![image](${dataUrl})`
+        : `@IMG:${dataUrl}@ENDIMG`;
+      const textEl = document.querySelector(`.draggable-note[data-id="${noteId}"] .draggable-note-text`);
+      const isEditing = textEl && textEl.classList.contains('editing');
+      if (isEditing && textEl) {
+        const sel = window.getSelection();
+        if (sel.rangeCount > 0) {
+          const range = sel.getRangeAt(0);
+          range.deleteContents();
+          range.insertNode(document.createTextNode(imgRef));
+          range.collapse(false);
+        } else {
+          note.text = (note.text || '') + '\n' + imgRef;
+        }
+      } else {
+        note.text = (note.text || '') + '\n' + imgRef;
+      }
+      saveCanvasData();
+      if (textEl) {
+        textEl.innerHTML = renderNoteContent(note);
+        if (isEditing) {
+          textEl.setAttribute('contenteditable', 'true');
+          textEl.classList.add('editing', note.format === 'markdown' ? 'editing-markdown' : 'editing-plain');
+          const range = document.createRange();
+          range.selectNodeContents(textEl);
+          range.collapse(false);
+          const sel = window.getSelection();
+          sel.removeAllRanges();
+          sel.addRange(range);
+          const editBtn = textEl.closest('.draggable-note').querySelector('.note-edit-btn');
+          if (editBtn) editBtn.classList.add('editing');
+        }
+      }
+    };
+    reader.readAsDataURL(file);
+  }
+
   function renderPlainNote(text) {
     if (!text) return '<span style="opacity:0.35">Empty</span>';
-    return escapeHtml(text).replace(/\n/g, '<br>');
+    let html = escapeHtml(text).replace(/\n/g, '<br>');
+    html = html.replace(/@IMG:([\s\S]*?)@ENDIMG/g, '<img src="$1" alt="Image" style="max-width:100%;border-radius:4px;margin:4px 0" loading="lazy">');
+    return html;
   }
 
   function renderNoteContent(note) {
+    if (note.format === 'image') {
+      let html = note.image ? `<img src="${escapeHtml(note.image)}" alt="" style="max-width:100%;height:auto;display:block;border-radius:4px;pointer-events:none" loading="lazy">` : '';
+      if (note.text) {
+        html += '<div style="margin-top:6px;font-size:13px;line-height:1.4">' + escapeHtml(note.text).replace(/\n/g, '<br>') + '</div>';
+      }
+      return html || '<span style="opacity:0.35">Empty image</span>';
+    }
     let html = note.format === 'markdown' ? renderMarkdown(note.text) : renderPlainNote(note.text);
     if (currentFindQuery) {
       html = highlightText(html, currentFindQuery);
@@ -3315,6 +3418,49 @@ def greet(name):
 
   function createMarkdownNote(text) {
     return createNote(text, { format: 'markdown', startEditing: true });
+  }
+
+  function createImageNote(dataUrl, x, y) {
+    const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    const note = {
+      id,
+      text: '',
+      image: dataUrl,
+      format: 'image',
+      z: getNextNoteZ(),
+      color: getRandomColor(),
+      tags: [],
+      created: Date.now(),
+      visible: true,
+      x: x ?? (60 + Math.random() * 200),
+      y: y ?? (100 + Math.random() * 300),
+      w: 200,
+      h: 160,
+    };
+    notes.unshift(note);
+    if (notes.length > 20) notes.length = 20;
+    if (getCanvasStorageSize() > MAX_IMAGE_STORAGE) {
+      alert('Image storage limit reached (~4MB). Remove some images first.');
+      notes.splice(notes.indexOf(note), 1);
+      return null;
+    }
+    const img = new Image();
+    img.onload = () => {
+      const maxW = 300, maxH = 400;
+      let w = img.naturalWidth, h = img.naturalHeight;
+      if (w > maxW) { h = h * maxW / w; w = maxW; }
+      if (h > maxH) { w = w * maxH / h; h = maxH; }
+      note.w = Math.round(w) + 24;
+      note.h = Math.round(h) + 40;
+      saveCanvasData();
+      const el = document.querySelector(`.draggable-note[data-id="${id}"]`);
+      if (el) { el.style.width = note.w + 'px'; el.style.height = note.h + 'px'; }
+    };
+    img.src = dataUrl;
+    saveCanvasData();
+    renderStickyNotes();
+    renderSidebar();
+    return id;
   }
 
   function deleteNote(id) {
@@ -4045,6 +4191,7 @@ def greet(name):
       ensureNoteFormat(n);
       el.className = `draggable-note draggable-note-color-${n.color}`;
       el.dataset.id = n.id;
+      el.dataset.format = n.format;
       el.style.left = n.x + 'px';
       el.style.top = n.y + 'px';
       el.style.width = (n.w || 220) + 'px';
@@ -4104,6 +4251,35 @@ def greet(name):
         e.stopPropagation();
         if (!textEl.classList.contains('editing')) {
           enterEditMode(textEl);
+        }
+      });
+
+      textEl.addEventListener('paste', (e) => {
+        const files = e.clipboardData.files;
+        for (const file of files) {
+          if (file.type.startsWith('image/')) {
+            e.preventDefault();
+            handleImageFile(file, n.id);
+            return;
+          }
+        }
+      });
+
+      textEl.addEventListener('dragover', (e) => {
+        if (e.dataTransfer.types.includes('Files')) {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'copy';
+        }
+      });
+
+      textEl.addEventListener('drop', (e) => {
+        const files = e.dataTransfer.files;
+        for (const file of files) {
+          if (file.type.startsWith('image/')) {
+            e.preventDefault();
+            handleImageFile(file, n.id);
+            return;
+          }
         }
       });
 
@@ -4442,6 +4618,7 @@ def greet(name):
     const id = noteEl.dataset.id;
     const note = notes.find(n => n.id === id);
     if (note) {
+      if (note.format === 'image') return;
       note.text = textEl.textContent || '';
       saveCanvasData();
       textEl.innerHTML = renderNoteContent(note);
@@ -4456,6 +4633,10 @@ def greet(name):
     const id = noteEl.dataset.id;
     const note = notes.find(n => n.id === id);
     if (!note) return;
+    if (note.format === 'image') {
+      showToast('\u26A0\uFE0F Image notes cannot be edited');
+      return;
+    }
     textEl.textContent = note.text || '';
     textEl.setAttribute('contenteditable', 'true');
     textEl.classList.add('editing', note.format === 'markdown' ? 'editing-markdown' : 'editing-plain');
@@ -4632,6 +4813,20 @@ def greet(name):
     }
   });
 
+  document.addEventListener('paste', (e) => {
+    if (e.target.closest('input, textarea, [contenteditable]')) return;
+    const files = e.clipboardData.files;
+    for (const file of files) {
+      if (file.type.startsWith('image/')) {
+        e.preventDefault();
+        const reader = new FileReader();
+        reader.onload = (ev) => { createImageNote(ev.target.result); };
+        reader.readAsDataURL(file);
+        return;
+      }
+    }
+  });
+
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && document.getElementById('confirmDialogOverlay').classList.contains('visible')) {
       hideConfirmDialog(false);
@@ -4687,6 +4882,29 @@ def greet(name):
   const initialCanvas = getCurrentCanvas();
   if (initialCanvas && initialCanvas.bg) applyCanvasBg(initialCanvas.bg);
   renderStickyNotes();
+
+  const canvasBg = document.getElementById('random-bg');
+  canvasBg.addEventListener('dragover', (e) => {
+    if (e.dataTransfer.types.includes('Files')) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'copy';
+    }
+  });
+  canvasBg.addEventListener('drop', (e) => {
+    e.preventDefault();
+    const files = e.dataTransfer.files;
+    for (const file of files) {
+      if (file.type.startsWith('image/')) {
+        const rect = canvasBg.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const reader = new FileReader();
+        reader.onload = (ev) => { createImageNote(ev.target.result, x, y); };
+        reader.readAsDataURL(file);
+        return;
+      }
+    }
+  });
 </script>
 </body>
 </html>
