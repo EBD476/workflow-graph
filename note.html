@@ -34,13 +34,14 @@
         --radius-sm: 10px;
       }
 
-      @media (prefers-color-scheme: dark) {
+      @media (prefers-color-scheme: dark) {        
         :root {
           --bg: linear-gradient(145deg, #0d0d12 0%, #12121a 40%, #0f0d18 100%);
           --surface: rgba(25,25,32,0.82);
           --surface-border: rgba(50,50,58,0.95);
           --surface-glow: rgba(255,255,255,0.03);
           --text: #f0f0f4;
+          --text-dark : #333;
           --text-secondary: #888892;
           --text-tertiary: #555560;
           --accent: #0a84ff;
@@ -723,7 +724,7 @@
       .notes-sidebar-title {
         font-size: 17px;
         font-weight: 600;
-        color: var(--text);
+        color: var(--text-secondary);
       }
 
       .notes-sidebar-actions {
@@ -863,7 +864,7 @@
       .notes-sidebar-item .item-title {
         font-size: 13px;
         font-weight: 500;
-        color: var(--text);
+        color: var(--text-secondary);
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
@@ -1101,9 +1102,22 @@
         text-overflow: ellipsis;
         white-space: nowrap;
         font-weight: 500;
-        color: var(--text);
+        color: var(--text-secondary);
       }
 
+      .canvas-rename-input {
+        flex: 1;
+        min-width: 0;
+        font-family: inherit;
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--text);
+        background: var(--accent-alpha);
+        border: 0.5px solid var(--accent);
+        border-radius: 6px;
+        padding: 2px 6px;
+        outline: none;
+      }
       .canvas-rename-btn {
         flex-shrink: 0;
         width: 20px;
@@ -3699,7 +3713,7 @@
       }
       html += '</div>';
       html += '<div class="sidebar-divider"></div>';
-
+      
       const activeNotes = notes.filter(n => !n.archived);
       const archivedNotes = notes.filter(n => n.archived);
       const colorMap = { yellow: '#fff3b0', green: '#b5e6b5', blue: '#b5d6f0', pink: '#f0c4d8', lavender: '#d4c4f0', peach: '#fad4b5', mint: '#b5e6d4', coral: '#f5b8b0' };
@@ -3725,7 +3739,7 @@
       }
 
       if (archivedNotes.length) {
-        html += `<div class="sidebar-divider"></div>`;
+       
         html += `<div class="sidebar-section-header" style="padding:8px 20px 6px;display:flex;align-items:center;gap:6px;border-bottom:0.5px solid var(--divider)"><span>\uD83D\uDCE4 Archived (${archivedNotes.length})</span></div>`;
         html += archivedNotes.map(n => {
           const dotColor = colorMap[n.color] || colorMap.yellow;
@@ -5055,12 +5069,36 @@
       }
       const renameBtn = e.target.closest('.canvas-rename-btn');
       if (renameBtn && renameBtn.dataset.renameId) {
-        const c = canvases.find(c => c.id === renameBtn.dataset.renameId);
-        if (c) {
-          const name = prompt('Rename canvas:', c.name);
-          if (name && name.trim() && name.trim() !== c.name) {
-            renameCanvas(c.id, name.trim());
-          }
+        const cid = renameBtn.dataset.renameId;
+        const item = renameBtn.closest('.canvas-item');
+        const nameSpan = item?.querySelector('.canvas-name');
+        if (item && nameSpan && !item.classList.contains('renaming')) {
+          item.classList.add('renaming');
+          const currentName = nameSpan.textContent;
+          const input = document.createElement('input');
+          input.type = 'text';
+          input.className = 'canvas-rename-input';
+          input.value = currentName;
+          input.maxLength = 40;
+          nameSpan.replaceWith(input);
+          input.focus();
+          input.select();
+          const finishRename = (save) => {
+            const val = input.value.trim();
+            if (save && val && val !== currentName) {
+              renameCanvas(cid, val);
+            }
+            const span = document.createElement('span');
+            span.className = 'canvas-name';
+            span.textContent = val || currentName;
+            input.replaceWith(span);
+            item.classList.remove('renaming');
+          };
+          input.addEventListener('blur', () => finishRename(true));
+          input.addEventListener('keydown', (ev) => {
+            if (ev.key === 'Enter') { ev.preventDefault(); input.blur(); }
+            if (ev.key === 'Escape') { ev.preventDefault(); finishRename(false); }
+          });
         }
         return;
       }
