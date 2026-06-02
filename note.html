@@ -857,6 +857,12 @@
         flex-shrink: 0;
       }
 
+      .notes-sidebar-item .item-pin-indicator {
+        font-size: 10px;
+        flex-shrink: 0;
+        line-height: 1;
+      }
+
       .notes-sidebar-item .item-info {
         flex: 1;
         min-width: 0;
@@ -1806,6 +1812,46 @@
         color: #fff;
       }
 
+      .note-pin-btn {
+        position: absolute;
+        top: 6px;
+        right: 78px;
+        width: 22px;
+        height: 22px;
+        border: none;
+        border-radius: 50%;
+        background: rgba(0,0,0,0.08);
+        color: rgba(0,0,0,0.35);
+        font-size: 11px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.15s, background 0.15s, color 0.15s;
+        z-index: 10;
+      }
+
+      .draggable-note:hover .note-pin-btn {
+        opacity: 1;
+      }
+
+      .note-pin-btn:hover {
+        background: rgba(0,0,0,0.15);
+        color: rgba(0,0,0,0.6);
+      }
+
+      .note-pin-btn.pinned {
+        opacity: 1;
+        background: rgba(255,204,0,0.25);
+        color: #b8860b;
+      }
+
+      .note-pin-btn.pinned:hover {
+        background: rgba(255,204,0,0.4);
+        color: #8b6914;
+      }
+
       .draggable-note.dimmed {
         opacity: 0.08 !important;
         pointer-events: none !important;
@@ -1814,6 +1860,12 @@
 
       .draggable-note.dimmed .note-resize-handle {
         opacity: 0 !important;
+      }
+
+      .draggable-note.pinned-visible {
+        opacity: 0.4 !important;
+        pointer-events: none !important;
+        transition: opacity 0.35s ease;
       }
 
       .draggable-note.focused {
@@ -2253,7 +2305,7 @@
       .note-tag-btn {
         position: absolute;
         top: 6px;
-        right: 80px;
+        right: 100px;
         width: 22px;
         height: 22px;
         border: none;
@@ -3502,6 +3554,7 @@
         created: Date.now(),
         visible: true,
         archived: false,
+        pinned: false,
         x: x ?? (60 + Math.random() * 200),
         y: y ?? (100 + Math.random() * 300),
         w: isMarkdown || noteText.includes('\n') ? 260 : 220,
@@ -3509,8 +3562,8 @@
       };
       notes.unshift(note);
       if (notes.filter(n => !n.archived).length > 50) {
-        const lastActive = notes.filter(n => !n.archived).pop();
-        if (lastActive) archiveNote(lastActive.id, true);
+        const last = notes.filter(n => !n.archived && !n.pinned).pop();
+        if (last) archiveNote(last.id, true);
       }
       saveCanvasData();
       renderStickyNotes();
@@ -3566,6 +3619,7 @@
         created: Date.now(),
         visible: true,
         archived: false,
+        pinned: false,
         x: x ?? (60 + Math.random() * 200),
         y: y ?? (100 + Math.random() * 300),
         w: 200,
@@ -3573,8 +3627,8 @@
       };
       notes.unshift(note);
       if (notes.filter(n => !n.archived).length > 50) {
-        const lastActive = notes.filter(n => !n.archived).pop();
-        if (lastActive) archiveNote(lastActive.id, true);
+        const last = notes.filter(n => !n.archived && !n.pinned).pop();
+        if (last) archiveNote(last.id, true);
       }
       if (getCanvasStorageSize() > MAX_IMAGE_STORAGE) {
         alert('Image storage limit reached (~4MB). Remove some images first.');
@@ -3645,6 +3699,7 @@
         y: original.y + 30,
         z: getNextNoteZ(),
         archived: false,
+        pinned: false,
         tags: [...(original.tags || [])],
       };
       notes.unshift(clone);
@@ -3652,6 +3707,17 @@
       renderStickyNotes();
       renderSidebar();
       showToast(`\uD83D\uDCCB Note duplicated`);
+    }
+
+    function togglePinNote(id, silent) {
+      const note = notes.find(n => n.id === id);
+      if (!note) return;
+      note.pinned = !note.pinned;
+      if (note.pinned) note.z = getNextNoteZ();
+      saveCanvasData();
+      renderStickyNotes();
+      renderSidebar();
+      if (!silent) showToast(note.pinned ? `\uD83D\uDCCC Note pinned` : `\uD83D\uDCCD Note unpinned`);
     }
 
     function autoLayoutNotes() {
@@ -3847,7 +3913,7 @@
 
         html += '<div class="sidebar-divider"></div>';
 
-        const activeNotes = notes.filter(n => !n.archived);
+        const activeNotes = notes.filter(n => !n.archived).sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
         const archivedNotes = notes.filter(n => n.archived);
         const colorMap = { yellow: '#fff3b0', green: '#b5e6b5', blue: '#b5d6f0', pink: '#f0c4d8', lavender: '#d4c4f0', peach: '#fad4b5', mint: '#b5e6d4', coral: '#f5b8b0' };
 
@@ -3861,6 +3927,7 @@
               <div class="notes-sidebar-item" draggable="true" data-id="${n.id}">
                 <div class="toggle-track ${n.visible ? 'on' : ''}" data-toggle-id="${n.id}"></div>
                 <div class="item-color-dot" style="background:${dotColor}"></div>
+                ${n.pinned ? '<span class="item-pin-indicator" title="Pinned">\uD83D\uDCCC</span>' : ''}
                 <div class="item-info">
                   <div class="item-title">${displayText.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m] || m)}</div>
                   <div class="item-time">${time}</div>
@@ -4430,11 +4497,14 @@
     function enterFocusMode(noteId) {
       exitFocusMode();
       focusModeNoteId = noteId;
+      const focusedNote = notes.find(n => n.id === noteId);
       document.querySelectorAll('.draggable-note').forEach(el => {
         if (el.dataset.id === noteId) {
           el.classList.add('focused');
         } else {
-          el.classList.add('dimmed');
+          const n = notes.find(x => x.id === el.dataset.id);
+          if (n && n.pinned) el.classList.add('pinned-visible');
+          else el.classList.add('dimmed');
         }
       });
       const btn = document.querySelector(`.note-focus-btn[data-focus-id="${noteId}"]`);
@@ -4444,7 +4514,7 @@
     function exitFocusMode() {
       if (!focusModeNoteId) return;
       document.querySelectorAll('.draggable-note').forEach(el => {
-        el.classList.remove('dimmed', 'focused');
+        el.classList.remove('dimmed', 'focused', 'pinned-visible');
       });
       const btn = document.querySelector(`.note-focus-btn[data-focus-id="${focusModeNoteId}"]`);
       if (btn) btn.classList.remove('active');
@@ -4505,13 +4575,14 @@
           <button class="note-edit-btn" data-edit-id="${n.id}">✎</button>
           <button class="note-focus-btn" data-focus-id="${n.id}" title="Focus mode">⊙</button>
           <button class="note-tag-btn" data-tag-id="${n.id}" title="Tags">#</button>
+          <button class="note-pin-btn${n.pinned ? ' pinned' : ''}" data-pin-id="${n.id}" title="${n.pinned ? 'Unpin' : 'Pin'}">${n.pinned ? '\uD83D\uDCCD' : '\uD83D\uDCCC'}</button>
           <div class="draggable-note-time">${time}</div>
           <div class="draggable-note-text ${n.format === 'markdown' ? 'note-markdown' : 'note-plain'}" data-text-id="${n.id}">${renderNoteContent(n)}</div>
           ${n.tags && n.tags.length ? `<div class="draggable-note-tags">${n.tags.map(t => `<span class="note-tag" data-tag-name="${t}">${escapeHtml(t)}<button class="note-tag-remove" data-tag-rm="${n.id}" data-tag-name="${t}">✕</button></span>`).join('')}</div>` : ''}
           ${handleHTML}`;
 
         el.addEventListener('mousedown', (e) => {
-          if (e.target.closest('.draggable-note-delete') || e.target.closest('.note-resize-handle') || e.target.closest('.note-edit-btn') || e.target.closest('.note-focus-btn') || e.target.closest('.note-tag-btn')) return;
+          if (e.target.closest('.draggable-note-delete') || e.target.closest('.note-resize-handle') || e.target.closest('.note-edit-btn') || e.target.closest('.note-focus-btn') || e.target.closest('.note-tag-btn') || e.target.closest('.note-pin-btn')) return;
           if (e.target.closest('.draggable-note-text.editing')) return;
           if (e.button !== 0) return;
 
@@ -4576,6 +4647,12 @@
               return;
             }
           }
+        });
+
+        const pinBtn = el.querySelector('.note-pin-btn');
+        pinBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          togglePinNote(n.id);
         });
 
         document.body.appendChild(el);
@@ -5068,6 +5145,8 @@
 
       const archiveLabel = note.archived ? '\uD83D\uDCE5 Restore' : 'Archive';
       const archiveAction = note.archived ? 'restore' : 'archive';
+      const pinLabel = note.pinned ? 'Unpin' : 'Pin';
+      const pinAction = note.pinned ? 'unpin' : 'pin';
 
       menu.innerHTML = `
         <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-tertiary);padding:4px 14px 6px;">Color</div>
@@ -5075,8 +5154,9 @@
           ${colorSwatches}
         </div>
         <div class="context-menu-divider"></div>
-        <div class="context-menu-item" data-note-action="${archiveAction}" data-note-id="${noteId}">${archiveLabel}</div>
-        <div class="context-menu-item" data-note-action="duplicate" data-note-id="${noteId}">Duplicate</div>
+        <div class="context-menu-item" data-note-action="${pinAction}" data-note-id="${noteId}">${note.pinned ? '\uD83D\uDCCD' : '\uD83D\uDCCC'} ${pinLabel}</div>
+        <div class="context-menu-item" data-note-action="${archiveAction}" data-note-id="${noteId}">${note.archived ? '\uD83D\uDCE5' : '\uD83D\uDCE4'} ${archiveLabel}</div>
+        <div class="context-menu-item" data-note-action="duplicate" data-note-id="${noteId}">\uD83D\uDCCB Duplicate</div>
         <div class="context-menu-divider"></div>
         <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-tertiary);padding:4px 14px 6px;">Move to Canvas</div>
         ${canvasItems}
@@ -5147,6 +5227,7 @@
           if (nid && naction === 'archive') archiveNote(nid);
           else if (nid && naction === 'restore') restoreNote(nid);
           else if (nid && naction === 'duplicate') duplicateNote(nid);
+          else if (nid && (naction === 'pin' || naction === 'unpin')) togglePinNote(nid);
           closeContextMenu();
           return;
         }
