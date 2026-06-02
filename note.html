@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet"> 
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
     <title>Command Palette</title>
     <style>
       *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
@@ -1744,6 +1745,78 @@
         background: rgba(0,0,0,0.03);
       }
 
+      .note-mermaid .mermaid-note-wrap {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+      }
+
+      .note-mermaid .mermaid {
+        width: 100%;
+        min-height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .note-mermaid .mermaid svg {
+        max-width: 100%;
+        height: auto;
+      }
+
+      .mermaid-toggle-btn {
+        position: absolute;
+        top: 2px;
+        right: 2px;
+        width: 20px;
+        height: 20px;
+        border: none;
+        border-radius: 4px;
+        background: rgba(0,0,0,0.06);
+        color: rgba(0,0,0,0.35);
+        font-size: 11px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.15s, background 0.15s;
+        z-index: 5;
+      }
+
+      .note-mermaid:hover .mermaid-toggle-btn {
+        opacity: 1;
+      }
+
+      .mermaid-toggle-btn:hover {
+        background: rgba(0,0,0,0.15);
+        color: rgba(0,0,0,0.6);
+      }
+
+      .mermaid-source {
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        font-family: 'SF Mono', 'Fira Code', monospace;
+        font-size: 11px;
+        line-height: 1.5;
+        white-space: pre;
+        padding: 4px;
+        background: rgba(0,0,0,0.03);
+        border-radius: 4px;
+        color: var(--text);
+      }
+
+      .mermaid-error {
+        padding: 12px;
+        color: #ff453a;
+        font-size: 12px;
+        background: rgba(255,69,58,0.08);
+        border-radius: 6px;
+        border: 1px solid rgba(255,69,58,0.2);
+      }
+
       .note-edit-btn {
         position: absolute;
         top: 6px;
@@ -2548,7 +2621,7 @@
     <div class="tag-popup-tags" id="tagPopupTags"></div>
     <div style="display:flex;gap:6px;margin-top:6px">
       <input type="text" class="tag-popup-input" id="tagPopupInput" placeholder="Add tag..." spellcheck="false" style="flex:1">
-      <button class="tag-popup-suggest" id="tagPopupSuggest" title="Suggest tags with AI" style="flex-shrink:0;width:32px;height:32px;border:none;border-radius:8px;background:var(--accent);color:#fff;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:opacity 0.15s">\u2728</button>
+      <button class="tag-popup-suggest" id="tagPopupSuggest" title="Suggest tags with AI" style="flex-shrink:0;width:32px;height:32px;border:none;border-radius:8px;background:var(--accent);color:#fff;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:opacity 0.15s">S</button>
     </div>
   </div>
 
@@ -2751,6 +2824,13 @@
       { id: 'tags',       trigger: '/tags',       label: 'Show Tags',   icon: '\uD83C\uDFF7', color: '#34c759', description: 'List all tags and notes they are attached to' },
       { id: 'recommend',  trigger: '/recommend',  label: 'Recommend',   icon: '\u2B50',       color: '#ff9500', description: 'Get AI-powered suggestions based on your notes', systemPrompt: 'You are a smart recommendation engine. Analyze the following notes and provide actionable suggestions: how to organize them, connections between topics, tags to add, next steps, and any insights you notice.', canvasAction: true, canvasPrefix: 'Analyze these notes and give recommendations:\n\n' },
       { id: 'suggesttags',trigger: '/suggesttags',label: 'Suggest Tags',icon: '#\uFE0F',      color: '#bf5af2', description: 'Auto-suggest tags for all notes on this canvas', systemPrompt: 'You are a tagging assistant. For each note below, suggest 1-3 relevant tags. Return the suggestions as a markdown list with note previews and tag suggestions.', canvasAction: true, canvasPrefix: 'Suggest tags for these notes:\n\n' },
+      { id: 'mermaid',    trigger: '/mermaid',    label: 'Mermaid Diagram', icon: '\uD83D\uDD37', color: '#34c759', description: 'Create a new Mermaid diagram note' },
+      { id: 'flowchart',  trigger: '/flowchart',  label: 'Flowchart',       icon: '\uD83D\uDD37', color: '#34c759', description: 'Create a Flowchart diagram' },
+      { id: 'sequence',   trigger: '/sequence',   label: 'Sequence Diagram',icon: '\uD83D\uDD37', color: '#007aff', description: 'Create a Sequence diagram' },
+      { id: 'class',      trigger: '/class',      label: 'Class Diagram',   icon: '\uD83D\uDD37', color: '#bf5af2', description: 'Create a UML Class diagram' },
+      { id: 'gantt',      trigger: '/gantt',      label: 'Gantt Chart',     icon: '\uD83D\uDD37', color: '#ff9500', description: 'Create a Gantt chart' },
+      { id: 'er',         trigger: '/er',         label: 'ER Diagram',      icon: '\uD83D\uDD37', color: '#5ac8fa', description: 'Create an Entity-Relationship diagram' },
+      { id: 'state',      trigger: '/state',      label: 'State Diagram',   icon: '\uD83D\uDD37', color: '#ff2d55', description: 'Create a State Machine diagram' },
     ];
 
     let lastSlashCmd = null;
@@ -3017,6 +3097,12 @@
                 const sorted = keys.sort((a,b) => tagMap[b] - tagMap[a]);
                 const html = sorted.map(t => `<span class="toast-tag">${escapeHtml(t)} (${tagMap[t]})</span>`).join(' ');
                 showToast(`<strong>Tags:</strong> ${html}`, 5000);
+                return;
+              }
+              const mermaidTypes = { mermaid: true, flowchart: true, sequence: true, class: true, gantt: true, er: true, state: true };
+              if (mermaidTypes[sc.id]) {
+                closeSearch();
+                createMermaidNote(sc.id);
                 return;
               }
               if (restText) {
@@ -3528,6 +3614,10 @@
         }
         return html || '<span style="opacity:0.35">Empty image</span>';
       }
+      if (note.format === 'mermaid') {
+        const escaped = escapeHtml(note.text);
+        return `<div class="mermaid-note-wrap"><div class="mermaid" data-mermaid-src="${escaped}">${escaped}</div><button class="mermaid-toggle-btn" data-toggle-mermaid="${note.id}">\u270F\uFE0F</button></div>`;
+      }
       let html = note.format === 'markdown' ? renderMarkdown(note.text) : renderPlainNote(note.text);
       if (currentFindQuery) {
         html = highlightText(html, currentFindQuery);
@@ -3718,6 +3808,98 @@
       renderStickyNotes();
       renderSidebar();
       if (!silent) showToast(note.pinned ? `\uD83D\uDCCC Note pinned` : `\uD83D\uDCCD Note unpinned`);
+    }
+
+    const MERMAID_TEMPLATES = {
+      flowchart: `flowchart TD
+    A[Start] --> B{Decision}
+    B -->|Yes| C[Action 1]
+    B -->|No| D[Action 2]
+    C --> E[End]
+    D --> E`,
+      sequence: `sequenceDiagram
+    participant User
+    participant System
+    User->>System: Request
+    System-->>User: Response
+    System->>System: Process`,
+      class: `classDiagram
+    class Animal {
+      +String name
+      +move()
+    }
+    class Dog {
+      +bark()
+    }
+    Animal <|-- Dog`,
+      gantt: `gantt
+    title Project Plan
+    dateFormat  YYYY-MM-DD
+    section Development
+    Design      :a1, 2024-01-01, 7d
+    Implementation :a2, after a1, 14d
+    Testing     :a3, after a2, 7d`,
+      er: `erDiagram
+    CUSTOMER ||--o{ ORDER : places
+    ORDER ||--|{ LINE_ITEM : contains
+    CUSTOMER {
+      string name
+      string email
+    }`,
+      state: `stateDiagram-v2
+    [*] --> Idle
+    Idle --> Processing : start
+    Processing --> Done : finish
+    Done --> [*]`,
+    };
+
+    function getMermaidTemplate(type) {
+      return MERMAID_TEMPLATES[type] || `flowchart TD
+    A[Start] --> B[End]`;
+    }
+
+    function createMermaidNote(type) {
+      const text = getMermaidTemplate(type);
+      const note = {
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+        text,
+        format: 'mermaid',
+        z: getNextNoteZ(),
+        color: getRandomColor(),
+        tags: ['mermaid'],
+        created: Date.now(),
+        visible: true,
+        archived: false,
+        pinned: false,
+        x: 60 + Math.random() * 200,
+        y: 100 + Math.random() * 300,
+        w: 320,
+        h: 260,
+      };
+      notes.unshift(note);
+      saveCanvasData();
+      renderStickyNotes();
+      renderSidebar();
+      showToast(`\uD83D\uDD37 Mermaid diagram created`);
+    }
+
+    function renderMermaidInElement(container) {
+      if (typeof mermaid === 'undefined') return;
+      container.querySelectorAll('.mermaid').forEach(async (el) => {
+        const src = el.dataset.mermaidSrc || el.textContent;
+        if (!src || !src.trim()) return;
+        try {
+          const { svg } = await mermaid.render('mermaid-' + Math.random().toString(36).slice(2, 10), src);
+          el.outerHTML = svg;
+        } catch (e) {
+          el.outerHTML = `<div class="mermaid-error">Mermaid error: ${escapeHtml(e.message || e)}</div>`;
+        }
+      });
+    }
+
+    function renderMermaidDiagrams() {
+      if (typeof mermaid === 'undefined') return;
+      renderMermaidInElement(document);
     }
 
     function autoLayoutNotes() {
@@ -4116,6 +4298,11 @@
     }
 
     function renderCodeBlock(lang, code) {
+      if (lang === 'mermaid') {
+        const unescaped = code.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;/g,"'");
+        const escaped = unescaped.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m] || m);
+        return `<div class="mermaid" data-mermaid-src="${escaped}">${escaped}</div>`;
+      }
       const normalized = normalizeCodeLang(lang);
       const trimmed = code.replace(/\n$/, '');
       const highlighted = highlightCode(trimmed, normalized);
@@ -4533,7 +4720,7 @@
     }
 
     function ensureNoteFormat(note) {
-      if (!note.format) {
+      if (!note.format || !['plain', 'markdown', 'image', 'mermaid'].includes(note.format)) {
         note.format = 'plain';
       }
     }
@@ -4577,12 +4764,12 @@
           <button class="note-tag-btn" data-tag-id="${n.id}" title="Tags">#</button>
           <button class="note-pin-btn${n.pinned ? ' pinned' : ''}" data-pin-id="${n.id}" title="${n.pinned ? 'Unpin' : 'Pin'}">${n.pinned ? '\uD83D\uDCCD' : '\uD83D\uDCCC'}</button>
           <div class="draggable-note-time">${time}</div>
-          <div class="draggable-note-text ${n.format === 'markdown' ? 'note-markdown' : 'note-plain'}" data-text-id="${n.id}">${renderNoteContent(n)}</div>
+          <div class="draggable-note-text ${n.format === 'markdown' ? 'note-markdown' : n.format === 'mermaid' ? 'note-mermaid' : 'note-plain'}" data-text-id="${n.id}">${renderNoteContent(n)}</div>
           ${n.tags && n.tags.length ? `<div class="draggable-note-tags">${n.tags.map(t => `<span class="note-tag" data-tag-name="${t}">${escapeHtml(t)}<button class="note-tag-remove" data-tag-rm="${n.id}" data-tag-name="${t}">✕</button></span>`).join('')}</div>` : ''}
           ${handleHTML}`;
 
         el.addEventListener('mousedown', (e) => {
-          if (e.target.closest('.draggable-note-delete') || e.target.closest('.note-resize-handle') || e.target.closest('.note-edit-btn') || e.target.closest('.note-focus-btn') || e.target.closest('.note-tag-btn') || e.target.closest('.note-pin-btn')) return;
+          if (e.target.closest('.draggable-note-delete') || e.target.closest('.note-resize-handle') || e.target.closest('.note-edit-btn') || e.target.closest('.note-focus-btn') || e.target.closest('.note-tag-btn') || e.target.closest('.note-pin-btn') || e.target.closest('.mermaid-toggle-btn')) return;
           if (e.target.closest('.draggable-note-text.editing')) return;
           if (e.button !== 0) return;
 
@@ -4650,13 +4837,34 @@
         });
 
         const pinBtn = el.querySelector('.note-pin-btn');
-        pinBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          togglePinNote(n.id);
-        });
+        if (pinBtn) {
+          pinBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            togglePinNote(n.id);
+          });
+        }
+
+        const mermaidToggle = el.querySelector('.mermaid-toggle-btn');
+        if (mermaidToggle) {
+          mermaidToggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            n._showSource = !n._showSource;
+            const wrap = el.querySelector('.mermaid-note-wrap');
+            if (wrap) {
+              if (n._showSource) {
+                wrap.innerHTML = `<pre class="mermaid-source">${escapeHtml(n.text)}</pre><button class="mermaid-toggle-btn" data-toggle-mermaid="${n.id}">\uD83D\uDD3D</button>`;
+              } else {
+                const escaped = escapeHtml(n.text);
+                wrap.innerHTML = `<div class="mermaid" data-mermaid-src="${escaped}">${escaped}</div><button class="mermaid-toggle-btn" data-toggle-mermaid="${n.id}">\u270F\uFE0F</button>`;
+                renderMermaidInElement(el);
+              }
+            }
+          });
+        }
 
         document.body.appendChild(el);
       });
+      renderMermaidDiagrams();
     }
 
     document.addEventListener('mousemove', (e) => {
@@ -4951,6 +5159,13 @@
     });
 
     function execActionItem(action) {
+      const mermaidTypes = { mermaid: true, flowchart: true, sequence: true, class: true, gantt: true, er: true, state: true };
+      if (mermaidTypes[action]) {
+        pushHistory(action);
+        createMermaidNote(action);
+        closeSearch();
+        return;
+      }
       const sc = slashCommands.find(c => c.id === action);
       if (sc && sc.canvasPrefix) {
         const notesText = getCanvasNotesText();
@@ -5098,6 +5313,9 @@
         note.text = textEl.textContent || '';
         saveCanvasData();
         textEl.innerHTML = renderNoteContent(note);
+        if (note.format === 'mermaid') {
+          renderMermaidInElement(noteEl);
+        }
       }
       const editBtn = noteEl.querySelector('.note-edit-btn');
       if (editBtn) editBtn.classList.remove('editing');
@@ -5490,6 +5708,10 @@
 
     const initialCanvas = getCurrentCanvas();
     if (initialCanvas && initialCanvas.bg) applyCanvasBg(initialCanvas.bg);
+    if (typeof mermaid !== 'undefined') {
+      const theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'default';
+      mermaid.initialize({ startOnLoad: false, theme, securityLevel: 'loose' });
+    }
     renderStickyNotes();
 
     const canvasBg = document.getElementById('random-bg');
