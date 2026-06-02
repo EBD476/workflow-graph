@@ -664,7 +664,7 @@
       .notes-sidebar-overlay {
         position: fixed;
         inset: 0;
-        z-index: 9999;
+        z-index: 999;
         background: rgba(0,0,0,0.2);
         backdrop-filter: blur(4px);
         -webkit-backdrop-filter: blur(4px);
@@ -1883,6 +1883,7 @@
         transform: scale(0.92) translateY(8px);
         opacity: 0;
         transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+        z-index: 9999;
       }
 
       .confirm-dialog-overlay.visible .confirm-dialog {
@@ -2474,6 +2475,9 @@
       { id: 'clear-notes', title: 'Clear All Notes',    subtitle: 'Remove all sticky notes',        icon: '\u267B', color: '#ff3b30', shortcut: [], action: clearAllNotes },
       { id: 'new-canvas',  title: 'New Canvas',          subtitle: 'Create a new canvas',            icon: '+', color: '#5ac8fa', shortcut: [], action: () => addCanvas(prompt('Canvas name:', 'Canvas ' + (canvases.length + 1)) || '') },
       { id: 'delete-canvas', title: 'Delete Current Canvas', subtitle: 'Remove the active canvas and all its notes', icon: '\uD83D\uDDD1\uFE0F', color: '#ff3b30', shortcut: [], action: deleteCurrentCanvas },
+      { id: 'archive-note',  title: 'Archive Note',        subtitle: 'Archive the focused or latest note',  icon: '\uD83D\uDCE4', color: '#8e8e93', shortcut: [], action: () => { const a = notes.filter(n => !n.archived); if (a.length) archiveNote(a[0].id); } },
+      { id: 'duplicate-note',title: 'Duplicate Note',      subtitle: 'Duplicate the latest note',          icon: '\uD83D\uDCCB', color: '#ff9500', shortcut: [], action: () => { const a = notes.filter(n => !n.archived); if (a.length) duplicateNote(a[0].id); } },
+      { id: 'auto-layout',   title: 'Auto-Layout Notes',   subtitle: 'Auto-arrange all notes in a grid',   icon: '\uD83D\uDCC4', color: '#5ac8fa', shortcut: [], action: autoLayoutNotes },
     ];
 
     const noteColors = ['yellow', 'green', 'blue', 'pink', 'lavender', 'peach', 'mint', 'coral'];
@@ -3412,13 +3416,17 @@
         tags: [],
         created: Date.now(),
         visible: true,
+        archived: false,
         x: x ?? (60 + Math.random() * 200),
         y: y ?? (100 + Math.random() * 300),
         w: isMarkdown || noteText.includes('\n') ? 260 : 220,
         h: 180,
       };
       notes.unshift(note);
-      if (notes.length > 20) notes.length = 20;
+      if (notes.filter(n => !n.archived).length > 50) {
+        const lastActive = notes.filter(n => !n.archived).pop();
+        if (lastActive) archiveNote(lastActive.id, true);
+      }
       saveCanvasData();
       renderStickyNotes();
       renderSidebar();
@@ -3472,13 +3480,17 @@
         tags: [],
         created: Date.now(),
         visible: true,
+        archived: false,
         x: x ?? (60 + Math.random() * 200),
         y: y ?? (100 + Math.random() * 300),
         w: 200,
         h: 160,
       };
       notes.unshift(note);
-      if (notes.length > 20) notes.length = 20;
+      if (notes.filter(n => !n.archived).length > 50) {
+        const lastActive = notes.filter(n => !n.archived).pop();
+        if (lastActive) archiveNote(lastActive.id, true);
+      }
       if (getCanvasStorageSize() > MAX_IMAGE_STORAGE) {
         alert('Image storage limit reached (~4MB). Remove some images first.');
         notes.splice(notes.indexOf(note), 1);
@@ -3510,6 +3522,73 @@
       if (idx >= 0) notes.splice(idx, 1);
       saveCanvasData();
       renderSidebar();
+    }
+
+    function archiveNote(id, silent) {
+      const note = notes.find(n => n.id === id);
+      if (!note) return;
+      note.archived = true;
+      saveCanvasData();
+      renderStickyNotes();
+      renderSidebar();
+      if (!silent) showToast(`\uD83D\uDCE4 Note archived`);
+    }
+
+    function restoreNote(id) {
+      const note = notes.find(n => n.id === id);
+      if (!note) return;
+      note.archived = false;
+      note.x = 60 + Math.random() * 200;
+      note.y = 100 + Math.random() * 300;
+      note.z = getNextNoteZ();
+      note.visible = true;
+      saveCanvasData();
+      renderStickyNotes();
+      renderSidebar();
+      showToast(`\uD83D\uDCE5 Note restored`);
+    }
+
+    function duplicateNote(id) {
+      const original = notes.find(n => n.id === id);
+      if (!original) return;
+      const clone = {
+        ...original,
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+        text: original.text || '',
+        created: Date.now(),
+        x: original.x + 30,
+        y: original.y + 30,
+        z: getNextNoteZ(),
+        archived: false,
+        tags: [...(original.tags || [])],
+      };
+      notes.unshift(clone);
+      saveCanvasData();
+      renderStickyNotes();
+      renderSidebar();
+      showToast(`\uD83D\uDCCB Note duplicated`);
+    }
+
+    function autoLayoutNotes() {
+      const active = notes.filter(n => !n.archived);
+      if (!active.length) return;
+      const pad = 40;
+      const gap = 30;
+      const cols = Math.max(2, Math.floor((window.innerWidth - pad * 2) / 300));
+      const colW = (window.innerWidth - pad * 2 - gap * (cols - 1)) / cols;
+      const sorted = [...active].sort((a, b) => (a.z || 0) - (b.z || 0));
+      sorted.forEach((n, i) => {
+        const col = i % cols;
+        const row = Math.floor(i / cols);
+        n.x = pad + col * (colW + gap);
+        n.y = 80 + row * 220;
+        n.w = colW;
+        n.h = 180;
+        n.z = 60 + i;
+      });
+      saveCanvasData();
+      renderStickyNotes();
+      showToast(`\uD83D\uDCC4 Auto-laid out ${active.length} notes`);
     }
 
     let confirmResolve = null;
@@ -3621,9 +3700,13 @@
       html += '</div>';
       html += '<div class="sidebar-divider"></div>';
 
-      if (notes.length) {
-        const colorMap = { yellow: '#fff3b0', green: '#b5e6b5', blue: '#b5d6f0', pink: '#f0c4d8', lavender: '#d4c4f0', peach: '#fad4b5', mint: '#b5e6d4', coral: '#f5b8b0' };
-        html += notes.map(n => {
+      const activeNotes = notes.filter(n => !n.archived);
+      const archivedNotes = notes.filter(n => n.archived);
+      const colorMap = { yellow: '#fff3b0', green: '#b5e6b5', blue: '#b5d6f0', pink: '#f0c4d8', lavender: '#d4c4f0', peach: '#fad4b5', mint: '#b5e6d4', coral: '#f5b8b0' };
+
+      if (activeNotes.length) {
+        html += `<div class="sidebar-section-header" style="padding:8px 20px 6px;display:flex;align-items:center;gap:6px;border-bottom:0.5px solid var(--divider)"><span>Notes</span></div>`;
+        html += activeNotes.map(n => {
           const dotColor = colorMap[n.color] || colorMap.yellow;
           const displayText = getNotePreviewText(n);
           const time = new Date(n.created).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
@@ -3639,7 +3722,29 @@
               <button class="item-delete-sidebar" data-delete-id="${n.id}">✕</button>
             </div>`;
         }).join('');
-      } else {
+      }
+
+      if (archivedNotes.length) {
+        html += `<div class="sidebar-divider"></div>`;
+        html += `<div class="sidebar-section-header" style="padding:8px 20px 6px;display:flex;align-items:center;gap:6px;border-bottom:0.5px solid var(--divider)"><span>\uD83D\uDCE4 Archived (${archivedNotes.length})</span></div>`;
+        html += archivedNotes.map(n => {
+          const dotColor = colorMap[n.color] || colorMap.yellow;
+          const displayText = getNotePreviewText(n);
+          const time = new Date(n.created).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+          return `
+            <div class="notes-sidebar-item" data-id="${n.id}" style="opacity:0.6">
+              <div class="item-color-dot" style="background:${dotColor}"></div>
+              <div class="item-info">
+                <div class="item-title" style="font-style:italic">${displayText.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m] || m)}</div>
+                <div class="item-time">${time}</div>
+              </div>
+              <button class="item-delete-sidebar" data-restore-id="${n.id}" title="Restore" style="opacity:1;color:var(--accent);font-size:11px">\u21A9</button>
+              <button class="item-delete-sidebar" data-delete-id="${n.id}" style="opacity:0.6">✕</button>
+            </div>`;
+        }).join('');
+      }
+
+      if (!activeNotes.length && !archivedNotes.length) {
         html += '<div class="notes-sidebar-empty">No notes yet.<br>Use <strong>+</strong> for a simple note or <strong>Md</strong> for markdown.</div>';
       }
 
@@ -4097,11 +4202,14 @@
       const menu = document.getElementById('contextMenu');
       const canvas = getCurrentCanvas();
       const cx = e.clientX, cy = e.clientY;
+      const activeCount = notes.filter(n => !n.archived).length;
       menu.innerHTML = `
-        <div class="context-menu-item" data-action="simple" data-x="${cx}" data-y="${cy}"><!--<span class="ctx-icon">+</span>--> New Simple Note</div>
-        <div class="context-menu-item" data-action="markdown" data-x="${cx}" data-y="${cy}"><!--<span class="ctx-icon">Md</span> -->New Markdown Note</div>
+        <div class="context-menu-item" data-action="simple" data-x="${cx}" data-y="${cy}"> New Simple Note</div>
+        <div class="context-menu-item" data-action="markdown" data-x="${cx}" data-y="${cy}"> New Markdown Note</div>
         <div class="context-menu-divider"></div>
-        <div class="context-menu-item" data-action="bg"><!--<span class="ctx-icon">🎨</span>--> Change Background</div>
+        <div class="context-menu-item" data-action="auto-layout">Auto-Layout${activeCount ? ` (${activeCount} notes)` : ''}</div>
+        <div class="context-menu-divider"></div>
+        <div class="context-menu-item" data-action="bg"> Change Background</div>
       `;
       const rect = menu.getBoundingClientRect();
       const maxX = window.innerWidth - rect.width - 8;
@@ -4226,7 +4334,7 @@
 
     function renderStickyNotes() {
       document.querySelectorAll('.draggable-note').forEach(el => el.remove());
-      notes.forEach((n, i) => {
+      notes.filter(n => !n.archived).forEach((n, i) => {
         const el = document.createElement('div');
         ensureNoteFormat(n);
         el.className = `draggable-note draggable-note-color-${n.color}`;
@@ -4428,10 +4536,10 @@
         if (cmd) recent.push(cmd);
       }
 
-      const recentNotes = notes.slice(0, 5);
+      const recentNotes = notes.filter(n => !n.archived).slice(0, 5);
       const hasRecent = recent.length > 0;
       const hasNotes = recentNotes.length > 0;
-      const canvasNoteCount = notes.filter(n => (n.text || '').trim()).length;
+      const canvasNoteCount = notes.filter(n => !n.archived && (n.text || '').trim()).length;
 
       if (!hasRecent && !hasNotes && canvasNoteCount === 0) {
         renderEmptyState(false);
@@ -4802,11 +4910,17 @@
         canvasItems += `<div class="context-menu-item context-menu-item-sm" data-canvas-move="${noteId}" data-target-canvas="${c.id}">${isCurrent ? '\u25CF' : '\u25CB'} ${escapeHtml(c.name)}</div>`;
       });
 
+      const archiveLabel = note.archived ? '\uD83D\uDCE5 Restore' : 'Archive';
+      const archiveAction = note.archived ? 'restore' : 'archive';
+
       menu.innerHTML = `
         <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-tertiary);padding:4px 14px 6px;">Color</div>
         <div style="display:flex;gap:5px;padding:0 14px 10px;flex-wrap:wrap;">
           ${colorSwatches}
         </div>
+        <div class="context-menu-divider"></div>
+        <div class="context-menu-item" data-note-action="${archiveAction}" data-note-id="${noteId}">${archiveLabel}</div>
+        <div class="context-menu-item" data-note-action="duplicate" data-note-id="${noteId}">Duplicate</div>
         <div class="context-menu-divider"></div>
         <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-tertiary);padding:4px 14px 6px;">Move to Canvas</div>
         ${canvasItems}
@@ -4870,6 +4984,16 @@
           closeContextMenu();
           return;
         }
+        const noteActionItem = e.target.closest('[data-note-action]');
+        if (noteActionItem) {
+          const nid = noteActionItem.dataset.noteId;
+          const naction = noteActionItem.dataset.noteAction;
+          if (nid && naction === 'archive') archiveNote(nid);
+          else if (nid && naction === 'restore') restoreNote(nid);
+          else if (nid && naction === 'duplicate') duplicateNote(nid);
+          closeContextMenu();
+          return;
+        }
         const item = e.target.closest('.context-menu-item');
         if (item) {
           const action = item.dataset.action;
@@ -4881,6 +5005,8 @@
           } else if (action === 'bg') {
             if (!sidebarOpen) openSidebar();
             setTimeout(() => openColorPalette(currentCanvasId), 150);
+          } else if (action === 'auto-layout') {
+            autoLayoutNotes();
           }
           closeContextMenu();
           return;
@@ -4936,6 +5062,11 @@
             renameCanvas(c.id, name.trim());
           }
         }
+        return;
+      }
+      const restoreBtn = e.target.closest('[data-restore-id]');
+      if (restoreBtn && restoreBtn.dataset.restoreId) {
+        restoreNote(restoreBtn.dataset.restoreId);
         return;
       }
       const deleteSidebar = e.target.closest('.item-delete-sidebar');
@@ -5115,6 +5246,7 @@
           const rect = canvasBg.getBoundingClientRect();
           const x = e.clientX - rect.left;
           const y = e.clientY - rect.top;
+          
           const reader = new FileReader();
           reader.onload = (ev) => { createImageNote(ev.target.result, x, y); };
           reader.readAsDataURL(file);
