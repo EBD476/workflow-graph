@@ -634,9 +634,8 @@
         mask-image: linear-gradient(to left, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0) 90%);
       }
 
-      .notes-toggle-btn {
+      .fab-btn {
         position: fixed;
-        bottom: 24px;
         right: 24px;
         width: 48px;
         height: 48px;
@@ -645,7 +644,6 @@
         background: var(--surface);
         backdrop-filter: blur(20px);
         -webkit-backdrop-filter: blur(20px);
-        /* border: 0.5px solid var(--surface-border); */
         box-shadow: var(--shadow);
         color: var(--accent);
         font-size: 20px;
@@ -657,10 +655,13 @@
         justify-content: center;
       }
 
-      .notes-toggle-btn:hover {
+      .fab-btn:hover {
         transform: scale(1.08);
         box-shadow: var(--shadow-focus);
       }
+
+      .fab-btn.stats-btn { bottom: 80px; }
+      .fab-btn.notes-btn { bottom: 24px; }
 
       .notes-sidebar-overlay {
         position: fixed;
@@ -929,6 +930,75 @@
         line-height: 1.5;
       }
 
+      .sidebar-stats-inner {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        padding: 8px 20px 10px;
+      }
+      .stat-card {
+        flex: 1;
+        min-width: calc(50% - 3px);
+        background: var(--kbd-bg);
+        border-radius: 8px;
+        padding: 8px 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .stat-card-value {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--text-secondary);
+        line-height: 1.2;
+        font-variant-numeric: tabular-nums;
+      }
+      .stat-card-label {
+        font-size: 9px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--text-tertiary);
+      }
+      .stat-card .stat-tag-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 3px;
+        margin-top: 2px;
+      }
+      .stat-card .stat-tag-list .item-tag {
+        font-size: 8px;
+        padding: 1px 5px;
+      }
+      .stat-breakdown-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 11px;
+        color: var(--text-secondary);
+        padding: 1px 0;
+      }
+      .stat-breakdown-row .stat-bar {
+        flex: 1;
+        height: 4px;
+        border-radius: 2px;
+        background: var(--divider);
+        overflow: hidden;
+      }
+      .stat-breakdown-row .stat-bar-fill {
+        height: 100%;
+        border-radius: 2px;
+        background: var(--accent);
+        transition: width 0.4s ease;
+      }
+      .stat-breakdown-row .stat-count {
+        font-size: 10px;
+        font-weight: 600;
+        color: var(--text-tertiary);
+        font-variant-numeric: tabular-nums;
+        min-width: 20px;
+        text-align: right;
+      }
       .sidebar-section-header {
         display: flex;
         align-items: center;
@@ -2393,14 +2463,15 @@
   <body>
   <div class="random-bg" id="random-bg"></div>
 
-  <button class="notes-toggle-btn" id="notesToggleBtn">📌</button>
+  <button class="fab-btn stats-btn" id="statsToggleBtn" title="Stats dashboard">📊</button>
+  <button class="fab-btn notes-btn" id="notesToggleBtn">📌</button>
 
   <div class="notes-sidebar-overlay" id="notesSidebarOverlay"></div>
   <div class="notes-sidebar" id="notesSidebar">
     <div class="notes-sidebar-inner">
       <div class="notes-sidebar-header">
-        <span class="notes-sidebar-title">📌 Notes</span>
-        <div class="notes-sidebar-actions">
+        <span class="notes-sidebar-title" id="sidebarTitle">📌 Notes</span>
+        <div class="notes-sidebar-actions" id="sidebarActions">
           <button type="button" class="notes-sidebar-add simple" id="notesSidebarAddSimple" title="New simple note" aria-label="New simple note">+</button>
           <button type="button" class="notes-sidebar-add markdown" id="notesSidebarAddMarkdown" title="New markdown note" aria-label="New markdown note">Md</button>
           <button type="button" class="notes-sidebar-close" id="notesSidebarClose" aria-label="Close notes">✕</button>
@@ -2485,7 +2556,7 @@
       { id: 'new-simple-note',   title: 'Simple Note',   subtitle: 'Create a plain text sticky note',      icon: 'T', color: '#ffcc00', shortcut: [], action: () => createSimpleNote(input.value.trim() || null) },
       { id: 'new-markdown-note', title: 'Markdown Note', subtitle: 'Create a note with markdown formatting', icon: 'M', color: '#bf5af2', shortcut: [], action: () => createMarkdownNote(input.value.trim() || null) },
       { id: 'new-image-note',   title: 'Image Note',    subtitle: 'Pick an image file to create an image note', icon: '\uD83D\uDCF7', color: '#ff9500', shortcut: [], action: () => { const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*'; inp.onchange = () => { const f = inp.files[0]; if (f) { const r = new FileReader(); r.onload = e => createImageNote(e.target.result); r.readAsDataURL(f); } }; inp.click(); } },
-      { id: 'view-notes',  title: 'View Notes',         subtitle: 'Show all sticky notes',          icon: '\uD83D\uDCCC', color: '#5ac8fa', shortcut: [], action: openSidebar },
+      { id: 'view-notes',  title: 'View Notes',         subtitle: 'Show all sticky notes',          icon: '\uD83D\uDCCC', color: '#5ac8fa', shortcut: [], action: () => openSidebar('notes') },
       { id: 'clear-notes', title: 'Clear All Notes',    subtitle: 'Remove all sticky notes',        icon: '\u267B', color: '#ff3b30', shortcut: [], action: clearAllNotes },
       { id: 'new-canvas',  title: 'New Canvas',          subtitle: 'Create a new canvas',            icon: '+', color: '#5ac8fa', shortcut: [], action: () => addCanvas(prompt('Canvas name:', 'Canvas ' + (canvases.length + 1)) || '') },
       { id: 'delete-canvas', title: 'Delete Current Canvas', subtitle: 'Remove the active canvas and all its notes', icon: '\uD83D\uDDD1\uFE0F', color: '#ff3b30', shortcut: [], action: deleteCurrentCanvas },
@@ -3676,8 +3747,10 @@
     }
 
     let sidebarOpen = false;
+    let sidebarMode = 'notes';
 
-    function openSidebar() {
+    function openSidebar(mode) {
+      sidebarMode = mode || 'notes';
       sidebarOpen = true;
       document.getElementById('notesSidebar').classList.add('visible');
       document.getElementById('notesSidebarOverlay').classList.add('visible');
@@ -3692,74 +3765,134 @@
 
     function renderSidebar() {
       const listEl = document.getElementById('notesSidebarList');
+      const titleEl = document.getElementById('sidebarTitle');
+      const actionsEl = document.getElementById('sidebarActions');
       let html = '';
 
-      html += '<div class="sidebar-section-header"><span>Canvases</span><button class="header-btn" id="canvasAddBtn" title="New canvas">+</button></div>';
-      html += '<div class="canvas-list">';
-      for (const c of canvases) {
-        const isActive = c.id === currentCanvasId;
-        const noteCount = c.notes ? c.notes.length : 0;
-        const safeName = escapeHtml(c.name || 'Unnamed');
-        html += `<div class="canvas-item${isActive ? ' active' : ''}" data-canvas-id="${c.id}">`;
-        html +=   `<span class="canvas-indicator">${isActive ? '\u25CF' : '\u25CB'}</span>`;
-        html +=   `<span class="canvas-name">${safeName}</span>`;
-        html +=   `<button class="canvas-rename-btn" data-rename-id="${c.id}" title="Rename canvas">✎</button>`;
-        html +=   `<button class="canvas-color-btn" data-color-id="${c.id}" title="Change background" style="--dot-color:${c.bg || '#171f49'}"></button>`;
-        html +=   `<span class="canvas-count">${noteCount}</span>`;
+      if (sidebarMode === 'stats') {
+        titleEl.textContent = '\uD83D\uDCCA Stats';
+        actionsEl.innerHTML = '<button type="button" class="notes-sidebar-close" id="notesSidebarClose" aria-label="Close">\u2715</button>';
+
+        const activeNotes = notes.filter(n => !n.archived);
+        const archivedNotes = notes.filter(n => n.archived);
+        const colorMap = { yellow: '#fff3b0', green: '#b5e6b5', blue: '#b5d6f0', pink: '#f0c4d8', lavender: '#d4c4f0', peach: '#fad4b5', mint: '#b5e6d4', coral: '#f5b8b0' };
+
+        const totalActive = activeNotes.length;
+        const totalArchived = archivedNotes.length;
+        const totalWords = notes.reduce((s, n) => s + ((n.text || '').trim().split(/\s+/).filter(Boolean).length), 0);
+        const tagSet = new Set();
+        notes.forEach(n => (n.tags || []).forEach(t => tagSet.add(t)));
+        const tagCount = tagSet.size;
+        const fmtPlain = notes.filter(n => n.format === 'plain' && !n.archived).length;
+        const fmtMd = notes.filter(n => n.format === 'markdown' && !n.archived).length;
+        const fmtImg = notes.filter(n => n.format === 'image' && !n.archived).length;
+        const tagCounts = {};
+        notes.forEach(n => (n.tags || []).forEach(t => { tagCounts[t] = (tagCounts[t] || 0) + 1; }));
+        const topTags = Object.entries(tagCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
+
+        html += '<div class="sidebar-stats-inner" style="padding:8px 20px 16px">';
+        html += `<div class="stat-card"><span class="stat-card-value">${totalActive}</span><span class="stat-card-label">Active Notes</span></div>`;
+        if (totalArchived) html += `<div class="stat-card"><span class="stat-card-value">${totalArchived}</span><span class="stat-card-label">Archived</span></div>`;
+        html += `<div class="stat-card"><span class="stat-card-value">${tagCount}</span><span class="stat-card-label">Tags</span></div>`;
+        html += `<div class="stat-card"><span class="stat-card-value">${totalWords.toLocaleString()}</span><span class="stat-card-label">Words</span></div>`;
+        if (fmtPlain || fmtMd || fmtImg) {
+          const maxFmt = Math.max(fmtPlain, fmtMd, fmtImg) || 1;
+          html += `<div class="stat-card" style="min-width:100%"><span class="stat-card-label">By Format</span>`;
+          if (fmtPlain) html += `<div class="stat-breakdown-row"><span style="min-width:32px">Text</span><div class="stat-bar"><div class="stat-bar-fill" style="width:${(fmtPlain/maxFmt)*100}%;background:#8e8e93"></div></div><span class="stat-count">${fmtPlain}</span></div>`;
+          if (fmtMd) html += `<div class="stat-breakdown-row"><span style="min-width:32px">Md</span><div class="stat-bar"><div class="stat-bar-fill" style="width:${(fmtMd/maxFmt)*100}%;background:#bf5af2"></div></div><span class="stat-count">${fmtMd}</span></div>`;
+          if (fmtImg) html += `<div class="stat-breakdown-row"><span style="min-width:32px">Img</span><div class="stat-bar"><div class="stat-bar-fill" style="width:${(fmtImg/maxFmt)*100}%;background:#ff9500"></div></div><span class="stat-count">${fmtImg}</span></div>`;
+          html += `</div>`;
+        }
+        if (topTags.length) {
+          const maxTag = topTags[0][1] || 1;
+          html += `<div class="stat-card" style="min-width:100%"><span class="stat-card-label">Top Tags</span>`;
+          topTags.forEach(([tag, count]) => {
+            html += `<div class="stat-breakdown-row"><span style="min-width:40px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(tag)}</span><div class="stat-bar"><div class="stat-bar-fill" style="width:${(count/maxTag)*100}%;background:var(--accent)"></div></div><span class="stat-count">${count}</span></div>`;
+          });
+          html += `</div>`;
+        }
         if (canvases.length > 1) {
-          html +=   `<button class="canvas-delete-btn" data-canvas-id="${c.id}" title="Delete canvas">\u2715</button>`;
+          html += `<div class="sidebar-divider" style="margin:10px 0"></div>`;
+          html += `<div class="stat-card" style="min-width:100%"><span class="stat-card-label">All Canvases</span>`;
+          canvases.forEach(c => {
+            const n = c.notes ? c.notes.length : 0;
+            html += `<div class="stat-breakdown-row"><span style="min-width:calc(100% - 30px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(c.name || 'Unnamed')}</span><span class="stat-count">${n}</span></div>`;
+          });
+          html += `</div>`;
         }
         html += '</div>';
-      }
-      html += '</div>';
-      html += '<div class="sidebar-divider"></div>';
-      
-      const activeNotes = notes.filter(n => !n.archived);
-      const archivedNotes = notes.filter(n => n.archived);
-      const colorMap = { yellow: '#fff3b0', green: '#b5e6b5', blue: '#b5d6f0', pink: '#f0c4d8', lavender: '#d4c4f0', peach: '#fad4b5', mint: '#b5e6d4', coral: '#f5b8b0' };
 
-      if (activeNotes.length) {
-        html += `<div class="sidebar-section-header" style="padding:8px 20px 6px;display:flex;align-items:center;gap:6px;border-bottom:0.5px solid var(--divider)"><span>Notes</span></div>`;
-        html += activeNotes.map(n => {
-          const dotColor = colorMap[n.color] || colorMap.yellow;
-          const displayText = getNotePreviewText(n);
-          const time = new Date(n.created).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-          return `
-            <div class="notes-sidebar-item" draggable="true" data-id="${n.id}">
-              <div class="toggle-track ${n.visible ? 'on' : ''}" data-toggle-id="${n.id}"></div>
-              <div class="item-color-dot" style="background:${dotColor}"></div>
-              <div class="item-info">
-                <div class="item-title">${displayText.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m] || m)}</div>
-                <div class="item-time">${time}</div>
-                ${n.tags && n.tags.length ? `<div class="item-tags">${n.tags.map(t => `<span class="item-tag">${t.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m] || m)}</span>`).join('')}</div>` : ''}
-              </div>
-              <button class="item-delete-sidebar" data-delete-id="${n.id}">✕</button>
-            </div>`;
-        }).join('');
-      }
+      } else {
+        titleEl.textContent = '\uD83D\uDCCC Notes';
+        actionsEl.innerHTML = '<button type="button" class="notes-sidebar-add simple" id="notesSidebarAddSimple" title="New simple note" aria-label="New simple note">+</button><button type="button" class="notes-sidebar-add markdown" id="notesSidebarAddMarkdown" title="New markdown note" aria-label="New markdown note">Md</button><button type="button" class="notes-sidebar-close" id="notesSidebarClose" aria-label="Close notes">\u2715</button>';
 
-      if (archivedNotes.length) {
-       
-        html += `<div class="sidebar-section-header" style="padding:8px 20px 6px;display:flex;align-items:center;gap:6px;border-bottom:0.5px solid var(--divider)"><span>\uD83D\uDCE4 Archived (${archivedNotes.length})</span></div>`;
-        html += archivedNotes.map(n => {
-          const dotColor = colorMap[n.color] || colorMap.yellow;
-          const displayText = getNotePreviewText(n);
-          const time = new Date(n.created).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-          return `
-            <div class="notes-sidebar-item" data-id="${n.id}" style="opacity:0.6">
-              <div class="item-color-dot" style="background:${dotColor}"></div>
-              <div class="item-info">
-                <div class="item-title" style="font-style:italic">${displayText.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m] || m)}</div>
-                <div class="item-time">${time}</div>
-              </div>
-              <button class="item-delete-sidebar" data-restore-id="${n.id}" title="Restore" style="opacity:1;color:var(--accent);font-size:11px">\u21A9</button>
-              <button class="item-delete-sidebar" data-delete-id="${n.id}" style="opacity:0.6">✕</button>
-            </div>`;
-        }).join('');
-      }
+        html += '<div class="sidebar-section-header"><span>Canvases</span><button class="header-btn" id="canvasAddBtn" title="New canvas">+</button></div>';
+        html += '<div class="canvas-list">';
+        for (const c of canvases) {
+          const isActive = c.id === currentCanvasId;
+          const noteCount = c.notes ? c.notes.length : 0;
+          const safeName = escapeHtml(c.name || 'Unnamed');
+          html += `<div class="canvas-item${isActive ? ' active' : ''}" data-canvas-id="${c.id}">`;
+          html +=   `<span class="canvas-indicator">${isActive ? '\u25CF' : '\u25CB'}</span>`;
+          html +=   `<span class="canvas-name">${safeName}</span>`;
+          html +=   `<button class="canvas-rename-btn" data-rename-id="${c.id}" title="Rename canvas">✎</button>`;
+          html +=   `<button class="canvas-color-btn" data-color-id="${c.id}" title="Change background" style="--dot-color:${c.bg || '#171f49'}"></button>`;
+          html +=   `<span class="canvas-count">${noteCount}</span>`;
+          if (canvases.length > 1) {
+            html +=   `<button class="canvas-delete-btn" data-canvas-id="${c.id}" title="Delete canvas">\u2715</button>`;
+          }
+          html += '</div>';
+        }
+        html += '</div>';
 
-      if (!activeNotes.length && !archivedNotes.length) {
-        html += '<div class="notes-sidebar-empty">No notes yet.<br>Use <strong>+</strong> for a simple note or <strong>Md</strong> for markdown.</div>';
+        html += '<div class="sidebar-divider"></div>';
+
+        const activeNotes = notes.filter(n => !n.archived);
+        const archivedNotes = notes.filter(n => n.archived);
+        const colorMap = { yellow: '#fff3b0', green: '#b5e6b5', blue: '#b5d6f0', pink: '#f0c4d8', lavender: '#d4c4f0', peach: '#fad4b5', mint: '#b5e6d4', coral: '#f5b8b0' };
+
+        if (activeNotes.length) {
+          html += `<div class="sidebar-section-header" style="padding:8px 20px 6px;display:flex;align-items:center;gap:6px;border-bottom:0.5px solid var(--divider)"><span>Notes</span></div>`;
+          html += activeNotes.map(n => {
+            const dotColor = colorMap[n.color] || colorMap.yellow;
+            const displayText = getNotePreviewText(n);
+            const time = new Date(n.created).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+            return `
+              <div class="notes-sidebar-item" draggable="true" data-id="${n.id}">
+                <div class="toggle-track ${n.visible ? 'on' : ''}" data-toggle-id="${n.id}"></div>
+                <div class="item-color-dot" style="background:${dotColor}"></div>
+                <div class="item-info">
+                  <div class="item-title">${displayText.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m] || m)}</div>
+                  <div class="item-time">${time}</div>
+                  ${n.tags && n.tags.length ? `<div class="item-tags">${n.tags.map(t => `<span class="item-tag">${t.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m] || m)}</span>`).join('')}</div>` : ''}
+                </div>
+                <button class="item-delete-sidebar" data-delete-id="${n.id}">✕</button>
+              </div>`;
+          }).join('');
+        }
+
+        if (archivedNotes.length) {
+          html += `<div class="sidebar-section-header" style="padding:8px 20px 6px;display:flex;align-items:center;gap:6px;border-bottom:0.5px solid var(--divider)"><span>\uD83D\uDCE4 Archived (${archivedNotes.length})</span></div>`;
+          html += archivedNotes.map(n => {
+            const dotColor = colorMap[n.color] || colorMap.yellow;
+            const displayText = getNotePreviewText(n);
+            const time = new Date(n.created).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+            return `
+              <div class="notes-sidebar-item" data-id="${n.id}" style="opacity:0.6">
+                <div class="item-color-dot" style="background:${dotColor}"></div>
+                <div class="item-info">
+                  <div class="item-title" style="font-style:italic">${displayText.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m] || m)}</div>
+                  <div class="item-time">${time}</div>
+                </div>
+                <button class="item-delete-sidebar" data-restore-id="${n.id}" title="Restore" style="opacity:1;color:var(--accent);font-size:11px">\u21A9</button>
+                <button class="item-delete-sidebar" data-delete-id="${n.id}" style="opacity:0.6">✕</button>
+              </div>`;
+          }).join('');
+        }
+
+        if (!activeNotes.length && !archivedNotes.length) {
+          html += '<div class="notes-sidebar-empty">No notes yet.<br>Use <strong>+</strong> for a simple note or <strong>Md</strong> for markdown.</div>';
+        }
       }
 
       listEl.innerHTML = html;
@@ -4799,13 +4932,22 @@
 
     overlay.addEventListener('click', closeSearch);
 
-    document.getElementById('notesToggleBtn').addEventListener('click', () => {
-      if (sidebarOpen) closeSidebar(); else openSidebar();
+    document.getElementById('statsToggleBtn').addEventListener('click', () => {
+      if (sidebarOpen && sidebarMode === 'stats') { closeSidebar(); return; }
+      openSidebar('stats');
     });
-    document.getElementById('notesSidebarClose').addEventListener('click', closeSidebar);
+    document.getElementById('notesToggleBtn').addEventListener('click', () => {
+      if (sidebarOpen && sidebarMode === 'notes') { closeSidebar(); return; }
+      openSidebar('notes');
+    });
+    document.addEventListener('click', (e) => {
+      if (e.target.id === 'notesSidebarClose' || e.target.closest('#notesSidebarClose')) closeSidebar();
+    });
     document.getElementById('notesSidebarOverlay').addEventListener('click', closeSidebar);
-    document.getElementById('notesSidebarAddSimple').addEventListener('click', () => createSimpleNote(null));
-    document.getElementById('notesSidebarAddMarkdown').addEventListener('click', () => createMarkdownNote(null));
+    document.addEventListener('click', (e) => {
+      if (e.target.id === 'notesSidebarAddSimple' || e.target.closest('#notesSidebarAddSimple')) createSimpleNote(null);
+      if (e.target.id === 'notesSidebarAddMarkdown' || e.target.closest('#notesSidebarAddMarkdown')) createMarkdownNote(null);
+    });
 
     document.getElementById('confirmDialogCancel').addEventListener('click', () => hideConfirmDialog(false));
     document.getElementById('confirmDialogConfirm').addEventListener('click', () => hideConfirmDialog(true));
@@ -5017,7 +5159,7 @@
             const format = action === 'markdown' ? 'markdown' : 'plain';
             createNote(null, { format, startEditing: true, x, y });
           } else if (action === 'bg') {
-            if (!sidebarOpen) openSidebar();
+            if (!sidebarOpen) openSidebar('notes');
             setTimeout(() => openColorPalette(currentCanvasId), 150);
           } else if (action === 'auto-layout') {
             autoLayoutNotes();
@@ -5173,7 +5315,7 @@
       const previewItem = e.target.closest('[data-note-id]');
       if (previewItem && e.target.closest('.note-preview-item')) {
         if (isOpen) closeSearch();
-        openSidebar();
+        openSidebar('notes');
         return;
       }
       if (e.target.closest('.draggable-note-text.editing')) return;
