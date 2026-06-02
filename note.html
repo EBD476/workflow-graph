@@ -62,6 +62,55 @@
         }
       }
 
+      :root.dark-theme {
+        --bg: linear-gradient(145deg, #0d0d12 0%, #12121a 40%, #0f0d18 100%);
+        --surface: rgba(25,25,32,0.82);
+        --surface-border: rgba(50,50,58,0.95);
+        --surface-glow: rgba(255,255,255,0.03);
+        --text: #f0f0f4;
+        --text-dark : #333;
+        --text-secondary: #888892;
+        --text-tertiary: #555560;
+        --accent: #0a84ff;
+        --accent-glow: rgba(10,132,255,0.2);
+        --accent-alpha: rgba(10,132,255,0.12);
+        --accent-alpha-hover: rgba(10,132,255,0.07);
+        --divider: rgba(84,84,88,0.12);
+        --kbd-bg: rgba(255,255,255,0.06);
+        --kbd-border: rgba(255,255,255,0.08);
+        --kbd-text: #888892;
+        --overlay: rgba(0,0,0,0.55);
+        --scrollbar: rgba(255,255,255,0.1);
+        --empty-illustration: #555560;
+        --avatar-text: #fff;
+        --shadow: 0 4px 6px rgba(0,0,0,0.2), 0 12px 24px rgba(0,0,0,0.3), 0 24px 48px rgba(0,0,0,0.3);
+        --shadow-focus: 0 4px 8px rgba(0,0,0,0.3), 0 16px 32px rgba(0,0,0,0.4), 0 32px 64px rgba(0,0,0,0.4);
+      }
+
+      :root.light-theme {
+        --bg: linear-gradient(145deg, #f0f2f8 0%, #e8ecf4 50%, #f5f0fa 100%);
+        --surface: rgba(255,255,255,0.72);
+        --surface-border: rgba(255,255,255,0.95);
+        --surface-glow: rgba(255,255,255,0.5);
+        --text: #1c1c1e;
+        --text-secondary: #6c6c76;
+        --text-tertiary: #aeaeb2;
+        --accent: #007aff;
+        --accent-glow: rgba(0,122,255,0.25);
+        --accent-alpha: rgba(0,122,255,0.10);
+        --accent-alpha-hover: rgba(0,122,255,0.06);
+        --divider: rgba(60,60,67,0.06);
+        --kbd-bg: rgba(0,0,0,0.05);
+        --kbd-border: rgba(0,0,0,0.08);
+        --kbd-text: #555;
+        --overlay: rgba(0,0,0,0.3);
+        --scrollbar: rgba(0,0,0,0.12);
+        --empty-illustration: #aeaeb2;
+        --avatar-text: #fff;
+        --shadow: 0 4px 6px rgba(0,0,0,0.02), 0 12px 24px rgba(0,0,0,0.04), 0 24px 48px rgba(0,0,0,0.04);
+        --shadow-focus: 0 4px 8px rgba(0,0,0,0.02), 0 16px 32px rgba(0,0,0,0.06), 0 32px 64px rgba(0,0,0,0.06);
+      }
+
       body {
         font-family: 'poppins', -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
         background: var(--bg);
@@ -663,6 +712,7 @@
 
       .fab-btn.stats-btn { bottom: 80px; }
       .fab-btn.notes-btn { bottom: 24px; }
+      .fab-btn.settings-btn { bottom: 136px; }
 
       .notes-sidebar-overlay {
         position: fixed;
@@ -2186,6 +2236,196 @@
         box-shadow: 0 4px 12px rgba(255, 59, 48, 0.4);
       }
 
+      .settings-dialog-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.4);
+        z-index: 10000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s ease;
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+      }
+
+      .settings-dialog-overlay.visible {
+        opacity: 1;
+        pointer-events: all;
+      }
+
+      .settings-dialog {
+        background: var(--surface);
+        backdrop-filter: blur(30px);
+        -webkit-backdrop-filter: blur(30px);
+        border: 0.5px solid var(--surface-border);
+        border-radius: 20px;
+        width: 420px;
+        max-width: 90vw;
+        max-height: 85vh;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 16px 48px rgba(0,0,0,0.2);
+        animation: dialogIn 0.2s ease;
+      }
+
+      @keyframes dialogIn {
+        from { opacity: 0; transform: scale(0.95) translateY(8px); }
+        to { opacity: 1; transform: scale(1) translateY(0); }
+      }
+
+      .settings-dialog-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 18px 24px 14px;
+        border-bottom: 0.5px solid var(--divider);
+      }
+
+      .settings-dialog-header h2 {
+        font-size: 17px;
+        font-weight: 600;
+        color: var(--text);
+      }
+
+      .settings-dialog-close {
+        width: 28px;
+        height: 28px;
+        border: none;
+        border-radius: 50%;
+        background: var(--kbd-bg);
+        color: var(--text-secondary);
+        font-size: 14px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.15s;
+      }
+
+      .settings-dialog-close:hover {
+        background: var(--accent-alpha);
+        color: var(--text);
+      }
+
+      .settings-dialog-body {
+        padding: 16px 24px 20px;
+        overflow-y: auto;
+        flex: 1;
+      }
+
+      .settings-section {
+        margin-bottom: 20px;
+      }
+
+      .settings-section:last-child {
+        margin-bottom: 0;
+      }
+
+      .settings-section-title {
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--text-tertiary);
+        margin-bottom: 12px;
+      }
+
+      .settings-row {
+        margin-bottom: 12px;
+      }
+
+      .settings-row:last-child {
+        margin-bottom: 0;
+      }
+
+      .settings-label {
+        display: block;
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--text);
+        margin-bottom: 6px;
+      }
+
+      .settings-input,
+      .settings-select {
+        width: 100%;
+        padding: 9px 12px;
+        border: 0.5px solid var(--kbd-border);
+        border-radius: 10px;
+        background: var(--kbd-bg);
+        color: var(--text);
+        font-family: inherit;
+        font-size: 13px;
+        outline: none;
+        transition: border-color 0.15s;
+      }
+
+      .settings-input:focus,
+      .settings-select:focus {
+        border-color: var(--accent);
+      }
+
+      .settings-input::placeholder {
+        color: var(--text-tertiary);
+      }
+
+      .settings-select {
+        cursor: pointer;
+        appearance: none;
+        -webkit-appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        padding-right: 36px;
+      }
+
+      .settings-dialog-footer {
+        display: flex;
+        gap: 10px;
+        padding: 14px 24px 18px;
+        border-top: 0.5px solid var(--divider);
+      }
+
+      .settings-btn-cancel,
+      .settings-btn-save {
+        flex: 1;
+        padding: 10px 16px;
+        border: none;
+        border-radius: 10px;
+        font-family: inherit;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background 0.15s, transform 0.12s;
+      }
+
+      .settings-btn-cancel:active,
+      .settings-btn-save:active {
+        transform: scale(0.97);
+      }
+
+      .settings-btn-cancel {
+        background: var(--kbd-bg);
+        color: var(--text);
+        border: 0.5px solid var(--kbd-border);
+      }
+
+      .settings-btn-cancel:hover {
+        background: var(--accent-alpha-hover);
+      }
+
+      .settings-btn-save {
+        background: var(--accent);
+        color: #fff;
+      }
+
+      .settings-btn-save:hover {
+        opacity: 0.85;
+      }
+
       .find-highlight {
         background: rgba(255, 200, 0, 0.55);
         border-radius: 3px;
@@ -2590,6 +2830,7 @@
 
   <button class="fab-btn stats-btn" id="statsToggleBtn" title="Stats dashboard">📊</button>
   <button class="fab-btn notes-btn" id="notesToggleBtn">📌</button>
+  <button class="fab-btn settings-btn" id="settingsToggleBtn" title="Settings">⚙️</button>
 
   <div class="notes-sidebar-overlay" id="notesSidebarOverlay"></div>
   <div class="notes-sidebar" id="notesSidebar">
@@ -2656,6 +2897,47 @@
     </div>
   </div>
 
+  <div class="settings-dialog-overlay" id="settingsDialogOverlay" aria-hidden="true">
+    <div class="settings-dialog" role="dialog" aria-modal="true">
+      <div class="settings-dialog-header">
+        <h2>⚙️ Settings</h2>
+        <button type="button" class="settings-dialog-close" id="settingsDialogClose" aria-label="Close">✕</button>
+      </div>
+      <div class="settings-dialog-body">
+        <div class="settings-section">
+          <div class="settings-section-title">Theme</div>
+          <div class="settings-row">
+            <label class="settings-label">Appearance</label>
+            <select id="settingsTheme" class="settings-select">
+              <option value="system">System</option>
+              <option value="light">Light</option>
+              <option value="dark">Dark</option>
+            </select>
+          </div>
+        </div>
+        <div class="settings-section">
+          <div class="settings-section-title">LLM</div>
+          <div class="settings-row">
+            <label class="settings-label">Server Address</label>
+            <input type="text" id="settingsLlmEndpoint" class="settings-input" placeholder="http://localhost:11434/api/chat">
+          </div>
+          <div class="settings-row">
+            <label class="settings-label">Model Name</label>
+            <input type="text" id="settingsLlmModel" class="settings-input" placeholder="llama3.2">
+          </div>
+          <div class="settings-row">
+            <label class="settings-label">API Key</label>
+            <input type="password" id="settingsLlmApiKey" class="settings-input" placeholder="sk-... (leave blank if not needed)">
+          </div>
+        </div>
+      </div>
+      <div class="settings-dialog-footer">
+        <button type="button" class="settings-btn-cancel" id="settingsDialogCancel">Cancel</button>
+        <button type="button" class="settings-btn-save" id="settingsDialogSave">Save</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     const commands = [
       { id: 'new-file',    title: 'New File',           subtitle: 'Create a new file',              icon: 'N', color: '#007aff', shortcut: ['\u2318', 'N'],       action: () => alert('New File created') },
@@ -2672,7 +2954,7 @@
       { id: 'format',      title: 'Format Document',    subtitle: 'Auto-format current file',       icon: 'F', color: '#ff9500', shortcut: ['\u21E7', '\u2325', 'F'], action: () => alert('Document formatted') },
       { id: 'run-build',   title: 'Run Build Task',     subtitle: 'Execute the default build task', icon: '\u25B6', color: '#34c759', shortcut: ['\u2318', '\u21E7', 'B'], action: () => alert('Build started') },
       { id: 'debug',       title: 'Start Debugging',    subtitle: 'Launch debug session',           icon: '\u25B6', color: '#ff3b30', shortcut: ['F5'],             action: () => alert('Debugger started') },
-      { id: 'settings',    title: 'Open Settings',      subtitle: 'Edit application settings',      icon: '\u2699', color: '#8e8e93', shortcut: ['\u2318', ','],       action: () => alert('Settings opened') },
+      { id: 'settings',    title: 'Open Settings',      subtitle: 'Edit application settings',      icon: '\u2699', color: '#8e8e93', shortcut: ['\u2318', ','],       action: openSettingsDialog },
       { id: 'extensions',  title: 'Extensions',         subtitle: 'Manage installed extensions',    icon: '\u25A1', color: '#007aff', shortcut: ['\u2318', '\u21E7', 'X'], action: () => alert('Extensions panel opened') },
       { id: 'command-pal', title: 'Command Palette',    subtitle: 'Show all commands',              icon: '>', color: '#1c1c1e', shortcut: ['\u2318', '\u21E7', 'P'], action: () => alert("You're already here!") },
       { id: 'new-term',    title: 'New Terminal',       subtitle: 'Open a new terminal window',     icon: '+', color: '#1c1c1e', shortcut: ['\u2318', '\u21E7', '\u0060'], action: () => alert('New terminal opened') },
@@ -2715,12 +2997,15 @@
   \`\`\`
   `;
 
-    // const LLM_ENDPOINT = localStorage.getItem('llm_endpoint') || 'http://192.168.161.160:11434/api/chat';
-    // const LLM_MODEL = localStorage.getItem('llm_model') || 'llama3.2';
+    let LLM_ENDPOINT = localStorage.getItem('llm_endpoint') || 'http://192.168.167.70:11434/api/chat';
+    let LLM_MODEL = localStorage.getItem('llm_model') || 'qwen3.5:35b';
+    let LLM_API_KEY = localStorage.getItem('llm_api_key') || '';
 
-    // const LLM_ENDPOINT = localStorage.getItem('llm_endpoint') || 'http://192.168.164.205:11434/api/chat';
-    const LLM_ENDPOINT = localStorage.getItem('llm_endpoint') || 'http://192.168.167.70:11434/api/chat';
-    const LLM_MODEL = localStorage.getItem('llm_model') || 'qwen3.5:35b';
+    function getLlmHeaders() {
+      const headers = { 'Content-Type': 'application/json' };
+      if (LLM_API_KEY) headers['Authorization'] = 'Bearer ' + LLM_API_KEY;
+      return headers;
+    }
 
 
     function chatAction() {
@@ -3235,7 +3520,7 @@
         const res = await fetch(LLM_ENDPOINT, {
           method: 'POST',
           signal: chatAbortController.signal,
-          headers: { 'Content-Type': 'application/json' },
+          headers: getLlmHeaders(),
           body: JSON.stringify({
             model: LLM_MODEL,
             messages: [
@@ -3277,7 +3562,7 @@
         const [res] = await Promise.all([
           fetch(LLM_ENDPOINT, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: getLlmHeaders(),
             body: JSON.stringify({ model: LLM_MODEL, messages: [{ role: 'system', content: sysMsg }, { role: 'user', content: prompt }], stream: false }),
           }),
           minDisplay,
@@ -3922,6 +4207,63 @@
       saveCanvasData();
       renderStickyNotes();
       showToast(`\uD83D\uDCC4 Auto-laid out ${active.length} notes`);
+    }
+
+    function applyTheme(theme) {
+      const html = document.documentElement;
+      if (theme === 'dark') {
+        html.classList.add('dark-theme');
+      } else if (theme === 'light') {
+        html.classList.remove('dark-theme');
+      } else {
+        html.classList.remove('dark-theme');
+      }
+    }
+
+    function openSettingsDialog() {
+      const overlay = document.getElementById('settingsDialogOverlay');
+      document.getElementById('settingsTheme').value = localStorage.getItem('theme') || 'system';
+      document.getElementById('settingsLlmEndpoint').value = LLM_ENDPOINT;
+      document.getElementById('settingsLlmModel').value = LLM_MODEL;
+      document.getElementById('settingsLlmApiKey').value = LLM_API_KEY;
+      overlay.classList.add('visible');
+    }
+
+    function closeSettingsDialog() {
+      document.getElementById('settingsDialogOverlay').classList.remove('visible');
+    }
+
+    function saveSettings() {
+      const theme = document.getElementById('settingsTheme').value;
+      const endpoint = document.getElementById('settingsLlmEndpoint').value.trim();
+      const model = document.getElementById('settingsLlmModel').value.trim();
+      const apiKey = document.getElementById('settingsLlmApiKey').value;
+
+      localStorage.setItem('theme', theme);
+      if (theme === 'dark') {
+        applyTheme('dark');
+      } else if (theme === 'light') {
+        applyTheme('light');
+      } else {
+        applyTheme('system');
+        const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (isDark) applyTheme('dark');
+        else applyTheme('light');
+      }
+
+      if (endpoint) {
+        LLM_ENDPOINT = endpoint;
+        localStorage.setItem('llm_endpoint', endpoint);
+      }
+      if (model) {
+        LLM_MODEL = model;
+        localStorage.setItem('llm_model', model);
+      }
+      LLM_API_KEY = apiKey;
+      localStorage.setItem('llm_api_key', apiKey);
+
+      closeSettingsDialog();
+      showToast('Settings saved');
     }
 
     let confirmResolve = null;
@@ -4611,6 +4953,7 @@
         <div class="context-menu-item" data-action="auto-layout">Auto-Layout${activeCount ? ` (${activeCount} notes)` : ''}</div>
         <div class="context-menu-divider"></div>
         <div class="context-menu-item" data-action="bg"> Change Background</div>
+        <div class="context-menu-item" data-action="settings"> ⚙️ Settings</div>
       `;
       const rect = menu.getBoundingClientRect();
       const maxX = window.innerWidth - rect.width - 8;
@@ -5259,7 +5602,7 @@
       try {
         const res = await fetch(LLM_ENDPOINT, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: getLlmHeaders(),
           body: JSON.stringify({
             model: LLM_MODEL,
             messages: [
@@ -5462,6 +5805,8 @@
             setTimeout(() => openColorPalette(currentCanvasId), 150);
           } else if (action === 'auto-layout') {
             autoLayoutNotes();
+          } else if (action === 'settings') {
+            openSettingsDialog();
           }
           closeContextMenu();
           return;
@@ -5735,6 +6080,29 @@
           reader.readAsDataURL(file);
           return;
         }
+      }
+    });
+
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark') {
+      applyTheme('dark');
+    } else if (savedTheme === 'light') {
+      applyTheme('light');
+    } else {
+      const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if (isDark) applyTheme('dark');
+    }
+
+    document.getElementById('settingsToggleBtn').addEventListener('click', openSettingsDialog);
+    document.getElementById('settingsDialogClose').addEventListener('click', closeSettingsDialog);
+    document.getElementById('settingsDialogCancel').addEventListener('click', closeSettingsDialog);
+    document.getElementById('settingsDialogSave').addEventListener('click', saveSettings);
+    document.getElementById('settingsDialogOverlay').addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) closeSettingsDialog();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && document.getElementById('settingsDialogOverlay').classList.contains('visible')) {
+        closeSettingsDialog();
       }
     });
   </script>
