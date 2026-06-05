@@ -3242,6 +3242,20 @@
             }, 200);
             return;
           }
+          if (sc.id === 'diagram') {
+            closeSearch();
+            if (restText) {
+              pushHistory(sc.id);
+              doChatToMermaid(restText, sc.systemPrompt, sc.label);
+            } else if (sc.canvasAction) {
+              const notesText = getCanvasNotesText();
+              if (notesText) {
+                pushHistory(sc.id);
+                doChatToMermaid(sc.canvasPrefix + notesText, sc.systemPrompt, sc.label);
+              }
+            }
+            return;
+          }
           if (restText) {
             pushHistory(sc.id);
             doChatToNote(restText, sc.systemPrompt, sc.label);
@@ -3297,6 +3311,7 @@
       { id: 'gantt',      trigger: '/gantt',      label: 'Gantt Chart',     icon: '\uD83D\uDD37', color: '#ff9500', description: 'Create a Gantt chart' },
       { id: 'er',         trigger: '/er',         label: 'ER Diagram',      icon: '\uD83D\uDD37', color: '#5ac8fa', description: 'Create an Entity-Relationship diagram' },
       { id: 'state',      trigger: '/state',      label: 'State Diagram',   icon: '\uD83D\uDD37', color: '#ff2d55', description: 'Create a State Machine diagram' },
+      { id: 'diagram',    trigger: '/diagram',    label: 'Diagram from Text', icon: '\uD83E\uDE84', color: '#34c759', description: 'Convert text to a Mermaid diagram via AI', systemPrompt: 'You are a diagram expert. Convert the provided text into a Mermaid diagram. Return ONLY valid Mermaid syntax without markdown code fences, without explanation, without any additional text. The output must start directly with the mermaid diagram type (e.g., flowchart TD, sequenceDiagram, classDiagram, erDiagram, gantt, stateDiagram-v2, pie, gitGraph, etc.). Choose the most appropriate diagram type for the content.', canvasAction: true, canvasPrefix: 'Convert these notes into a single Mermaid diagram that best represents the relationships and concepts. Return ONLY the raw Mermaid syntax.\n\n' },
     ];
 
     let lastSlashCmd = null;
@@ -3571,6 +3586,22 @@
                 createMermaidNote(sc.id);
                 return;
               }
+              if (sc.id === 'diagram') {
+                closeSearch();
+                if (restText) {
+                  doChatToMermaid(restText, sc.systemPrompt, sc.label);
+                } else if (sc.canvasAction) {
+                  const notesText = getCanvasNotesText();
+                  if (notesText) {
+                    doChatToMermaid(sc.canvasPrefix + notesText, sc.systemPrompt, sc.label);
+                  } else {
+                    input.value = sc.trigger + ' ';
+                    input.focus();
+                    render(input.value);
+                  }
+                }
+                return;
+              }
               if (restText) {
                 doChatToNote(restText, sc.systemPrompt, sc.label);
               } else if (sc.canvasAction) {
@@ -3769,6 +3800,58 @@
           const el = document.querySelector(`.draggable-note[data-id="${noteId}"] .draggable-note-text`);
           if (el) el.innerHTML = renderNoteContent(note);
           renderSidebar();
+        }
+      }
+    }
+
+    async function doChatToMermaid(prompt, systemPrompt, actionLabel) {
+      closeSearch();
+      const sysMsg = systemPrompt || 'You are a diagram expert. Convert the provided text into a Mermaid diagram. Return ONLY valid Mermaid syntax without markdown code fences, without explanation, without any additional text. The output must start directly with the mermaid diagram type (e.g., flowchart TD, sequenceDiagram, classDiagram, erDiagram, gantt, stateDiagram-v2, pie, gitGraph, etc.).';
+      lastSlashCmd = { systemPrompt: sysMsg, label: actionLabel, prompt };
+      const noteId = createNote('', { format: 'mermaid', startEditing: false });
+      const noteEl = document.querySelector(`.draggable-note[data-id="${noteId}"]`);
+      const textEl = noteEl?.querySelector('.draggable-note-text');
+      if (textEl) {
+        textEl.innerHTML = `<div class="note-loading"><span class="note-loading-label">${actionLabel || 'Generating diagram'}</span><span class="dots"><span></span><span></span><span></span></span></div>`;
+      }
+      const minDisplay = new Promise(r => setTimeout(r, 400));
+      try {
+        const [res] = await Promise.all([
+          fetch(LLM_ENDPOINT, {
+            method: 'POST',
+            headers: getLlmHeaders(),
+            body: JSON.stringify({ model: LLM_MODEL, messages: [{ role: 'system', content: sysMsg }, { role: 'user', content: prompt }], stream: false }),
+          }),
+          minDisplay,
+        ]);
+        if (!res.ok) { const t = await res.text().catch(() => ''); throw new Error(t || `HTTP ${res.status}`); }
+        const data = await res.json();
+        let reply = data.choices[0]?.message?.content || data.message?.content || data.response || JSON.stringify(data);
+        reply = reply.replace(/^```mermaid\s*\n?/i, '').replace(/\n?```\s*$/i, '').trim();
+        const note = notes.find(n => n.id === noteId);
+        if (note) {
+          note.text = reply;
+          note.format = 'mermaid';
+          saveCanvasData();
+          const el = document.querySelector(`.draggable-note[data-id="${noteId}"] .draggable-note-text`);
+          if (el) el.innerHTML = renderNoteContent(note);
+          renderSidebar();
+          if (typeof mermaid !== 'undefined') {
+            setTimeout(() => renderMermaidInElement(noteEl), 100);
+          }
+        }
+      } catch (err) {
+        const note = notes.find(n => n.id === noteId);
+        if (note) {
+          note.text = `flowchart TD\n    A[Error] --> B["${err.message || 'Request failed'}"]`;
+          note.format = 'mermaid';
+          saveCanvasData();
+          const el = document.querySelector(`.draggable-note[data-id="${noteId}"] .draggable-note-text`);
+          if (el) el.innerHTML = renderNoteContent(note);
+          renderSidebar();
+          if (typeof mermaid !== 'undefined') {
+            setTimeout(() => renderMermaidInElement(noteEl), 100);
+          }
         }
       }
     }
@@ -5920,6 +6003,7 @@
         <div class="context-menu-item" data-note-action="${archiveAction}" data-note-id="${noteId}">${note.archived ? '\uD83D\uDCE5' : '\uD83D\uDCE4'} ${archiveLabel}</div>
         <div class="context-menu-item" data-note-action="copy" data-note-id="${noteId}">\uD83D\uDCCB Copy Text</div>
         <div class="context-menu-item" data-note-action="duplicate" data-note-id="${noteId}">\uD83D\uDCCB Duplicate</div>
+        ${note.format !== 'mermaid' ? `<div class="context-menu-item" data-note-action="diagram" data-note-id="${noteId}">\uD83E\uDE84 Convert to Mermaid</div>` : ''}
         <div class="context-menu-divider"></div>
         <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-tertiary);padding:4px 14px 6px;">Move to Canvas</div>
         ${canvasItems}
@@ -5994,6 +6078,13 @@
             const note = notes.find(n => n.id === nid);
             if (note && note.text) {
               navigator.clipboard.writeText(note.text).catch(() => {});
+            }
+          }
+          else if (nid && naction === 'diagram') {
+            const note = notes.find(n => n.id === nid);
+            if (note && note.text) {
+              const sc = slashCommands.find(c => c.id === 'diagram');
+              doChatToMermaid(note.text, sc ? sc.systemPrompt : undefined, 'Mermaid from Text');
             }
           }
           else if (nid && (naction === 'pin' || naction === 'unpin')) togglePinNote(nid);
