@@ -6236,6 +6236,15 @@
         closeSidebar();
         return;
       }
+      if (e.key === '/' && !e.ctrlKey && !e.metaKey && !e.altKey && !(e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable)) {
+        e.preventDefault();
+        if (isOpen) closeSearch();
+        openSearch();
+        input.value = '/';
+        input.setSelectionRange(1, 1);
+        render('/');
+        return;
+      }
       if (e.key === 'Tab' && !e.ctrlKey && !e.metaKey && !e.altKey) {
         const now = Date.now();
         if (now - lastTabTime < 350) {
