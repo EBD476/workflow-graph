@@ -2358,6 +2358,21 @@
         text-align: left;
       }
 
+      .draggable-note.api-refreshing .draggable-note-text {
+        opacity: 0.35;
+        transition: opacity 0.2s;
+      }
+      .draggable-note.api-refreshing::after {
+        content: '\23F3';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%,-50%);
+        font-size: 24px;
+        z-index: 5;
+        pointer-events: none;
+      }
+
       .draggable-note.dimmed {
         opacity: 0.08 !important;
         pointer-events: none !important;
@@ -4231,6 +4246,11 @@
 
     function loadApis() {
       try { apis = JSON.parse(localStorage.getItem('apis') || '[]'); } catch { apis = []; }
+      apis.forEach(api => {
+        if (api.cachedData) {
+          apiDataCache[api.id] = api.cachedData;
+        }
+      });
     }
 
     function saveApis() {
@@ -4379,6 +4399,42 @@
         saveApis();
         return data;
       } catch { return null; }
+    }
+
+    async function refreshAllApis() {
+      const apiNotes = notes.filter(n => !n.archived && n.format !== 'mermaid' && (n.apiId || /\$\{[^}]+\}/.test(n.text)));
+      if (!apiNotes.length) return;
+      apiNotes.forEach(n => {
+        const el = document.querySelector(`.draggable-note[data-id="${n.id}"]`);
+        if (el) el.classList.add('api-refreshing');
+      });
+      const promises = apis.map(async (api) => {
+        if (!api.url) return;
+        try {
+          const res = await fetch(api.url, { headers: { 'Accept': 'application/json' } });
+          if (res.ok) {
+            const data = await res.json();
+            apiDataCache[api.id] = data;
+            api.cachedData = data;
+            api.lastFetch = Date.now();
+          }
+        } catch {}
+      });
+      await Promise.allSettled(promises);
+      saveApis();
+      apiNotes.forEach(n => {
+        const el = document.querySelector(`.draggable-note[data-id="${n.id}"]`);
+        if (el) el.classList.remove('api-refreshing');
+        const textEl = document.querySelector(`.draggable-note[data-id="${n.id}"] .draggable-note-text`);
+        if (textEl) textEl.innerHTML = renderNoteContent(n);
+        if (n.format === 'mermaid') {
+          const noteEl = document.querySelector(`.draggable-note[data-id="${n.id}"]`);
+          if (noteEl && typeof mermaid !== 'undefined') {
+            setTimeout(() => renderMermaidInElement(noteEl), 50);
+          }
+        }
+      });
+      if (sidebarOpen && sidebarMode === 'api') renderSidebar();
     }
 
     let canvases = [];
@@ -6966,6 +7022,7 @@
       mermaid.initialize({ startOnLoad: false, theme, securityLevel: 'loose' });
     }
     renderStickyNotes();
+    setTimeout(() => refreshAllApis(), 500);
 
     const canvasBg = document.getElementById('random-bg');
     canvasBg.addEventListener('dragover', (e) => {
@@ -7052,11 +7109,13 @@
       if (api) {
         api.url = url;
         api.template = template;
+        if (_pendingApiData) { apiDataCache[api.id] = _pendingApiData; api.cachedData = _pendingApiData; }
         saveApis();
         showToast('\u2705 API updated');
       } else {
         const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
         if (_pendingApiData) apiDataCache[id] = _pendingApiData;
+        const data = _pendingApiData;
         _pendingApiData = null;
         apis.push({
           id,
@@ -7065,6 +7124,7 @@
           fields: [...document.querySelectorAll('.api-field-badge')].map(el => el.dataset.field).filter(Boolean),
           template,
           lastFetch: Date.now(),
+          cachedData: data,
         });
         saveApis();
         showToast('\u2705 API added');
