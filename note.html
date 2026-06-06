@@ -717,6 +717,7 @@
       .fab-btn.stats-btn { bottom: 80px; }
       .fab-btn.notes-btn { bottom: 24px; }
       .fab-btn.settings-btn { bottom: 136px; }
+      .fab-btn.api-btn { bottom: 195px; background: linear-gradient(135deg, #5ac8fa, #007aff); }
 
       .notes-sidebar-overlay {
         position: fixed;
@@ -1347,6 +1348,295 @@
       .notes-sidebar-list::-webkit-scrollbar-thumb {
         background: var(--scrollbar);
         border-radius: 4px;
+      }
+
+      .api-dialog-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.45);
+        z-index: 10000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.25s;
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+      }
+
+      .api-dialog-overlay.visible {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      .api-dialog {
+        background: var(--surface);
+        border: 1px solid var(--surface-border);
+        border-radius: 18px;
+        box-shadow: var(--shadow-focus);
+        width: 720px;
+        max-width: 92vw;
+        max-height: 85vh;
+        display: flex;
+        flex-direction: column;
+        transform: scale(0.92) translateY(12px);
+        transition: transform 0.25s;
+      }
+
+      .api-dialog-overlay.visible .api-dialog {
+        transform: scale(1) translateY(0);
+      }
+
+      .api-dialog-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 16px 20px 12px;
+        border-bottom: 1px solid var(--divider);
+      }
+
+      .api-dialog-header input {
+        flex: 1;
+        background: var(--kbd-bg);
+        border: 1px solid var(--divider);
+        border-radius: 8px;
+        padding: 8px 12px;
+        font-size: 13px;
+        color: var(--text);
+        outline: none;
+        font-family: inherit;
+      }
+
+      .api-dialog-header input:focus {
+        border-color: var(--accent);
+      }
+
+      .api-dialog-header button {
+        background: var(--accent);
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        padding: 8px 16px;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        font-family: inherit;
+        white-space: nowrap;
+        transition: opacity 0.15s;
+      }
+
+      .api-dialog-header button:hover { opacity: 0.85; }
+      .api-dialog-header button:disabled { opacity: 0.4; cursor: default; }
+
+      .api-dialog-body {
+        display: flex;
+        flex: 1;
+        min-height: 0;
+        padding: 16px 20px;
+        gap: 16px;
+      }
+
+      .api-dialog-fields {
+        width: 200px;
+        flex-shrink: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        overflow-y: auto;
+        padding-right: 4px;
+      }
+
+      .api-dialog-fields-title {
+        font-size: 10px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-tertiary);
+        margin-bottom: 4px;
+      }
+
+      .api-field-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        background: var(--accent-alpha);
+        color: var(--accent);
+        padding: 5px 10px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 500;
+        cursor: grab;
+        user-select: none;
+        transition: background 0.15s, transform 0.1s;
+        font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+      }
+
+      .api-field-badge:hover {
+        background: var(--accent-alpha-hover);
+        transform: translateY(-1px);
+      }
+
+      .api-field-badge:active {
+        cursor: grabbing;
+        transform: scale(0.95);
+      }
+
+      .api-dialog-template-wrap {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+      }
+
+      .api-dialog-template-title {
+        font-size: 10px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-tertiary);
+        margin-bottom: 4px;
+      }
+
+      .api-dialog-template {
+        flex: 1;
+        background: var(--kbd-bg);
+        border: 1px solid var(--divider);
+        border-radius: 8px;
+        padding: 10px 12px;
+        font-size: 13px;
+        color: var(--text);
+        resize: none;
+        outline: none;
+        font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+        line-height: 1.5;
+        min-height: 120px;
+        transition: border-color 0.15s;
+      }
+
+      .api-dialog-template:focus {
+        border-color: var(--accent);
+      }
+
+      .api-dialog-template.drag-over {
+        border-color: var(--accent);
+        background: var(--accent-alpha);
+      }
+
+      .api-dialog-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        padding: 12px 20px 16px;
+        border-top: 1px solid var(--divider);
+      }
+
+      .api-dialog-footer button {
+        padding: 8px 18px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        border: none;
+        font-family: inherit;
+        transition: opacity 0.15s;
+      }
+
+      .api-dialog-footer button:hover { opacity: 0.85; }
+
+      .api-dialog-footer .api-save-btn {
+        background: var(--accent);
+        color: #fff;
+      }
+
+      .api-dialog-footer .api-cancel-btn {
+        background: var(--kbd-bg);
+        color: var(--text);
+      }
+
+      .api-dialog-footer .api-delete-btn {
+        background: rgba(255,45,85,0.12);
+        color: #ff2d55;
+        margin-right: auto;
+      }
+
+      .api-sidebar-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 14px;
+        cursor: pointer;
+        border-radius: var(--radius-sm);
+        transition: background 0.15s;
+      }
+
+      .api-sidebar-item:hover {
+        background: var(--accent-alpha-hover);
+      }
+
+      .api-sidebar-item .api-icon {
+        font-size: 18px;
+        flex-shrink: 0;
+      }
+
+      .api-sidebar-item .api-info {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .api-sidebar-item .api-name {
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--text);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .api-sidebar-item .api-meta {
+        font-size: 10px;
+        color: var(--text-tertiary);
+        margin-top: 1px;
+      }
+
+      .api-sidebar-item .api-configure-btn {
+        background: var(--accent-alpha);
+        color: var(--accent);
+        border: none;
+        border-radius: 6px;
+        padding: 4px 10px;
+        font-size: 11px;
+        cursor: pointer;
+        font-family: inherit;
+        transition: background 0.15s;
+        flex-shrink: 0;
+      }
+
+      .api-sidebar-item .api-configure-btn:hover {
+        background: var(--accent);
+        color: #fff;
+      }
+
+      .api-sidebar-empty {
+        text-align: center;
+        padding: 40px 20px;
+        color: var(--text-tertiary);
+        font-size: 13px;
+        line-height: 1.6;
+      }
+
+      .api-sidebar-empty strong {
+        color: var(--text-secondary);
+      }
+
+      .api-loading {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        color: var(--text-tertiary);
+        font-size: 13px;
+        padding: 20px;
       }
 
       .draggable-note {
@@ -3049,6 +3339,7 @@
   <div class="random-bg" id="random-bg"></div>
 
   <button class="fab-btn stats-btn" id="statsToggleBtn" title="Stats dashboard">📊</button>
+  <button class="fab-btn api-btn" id="apiToggleBtn" title="API Integrations">🔌</button>
   <button class="fab-btn notes-btn" id="notesToggleBtn">📌</button>
   <button class="fab-btn settings-btn" id="settingsToggleBtn" title="Settings">⚙️</button>
 
@@ -3167,6 +3458,31 @@
       <div class="settings-dialog-footer">
         <button type="button" class="settings-btn-cancel" id="settingsDialogCancel">Cancel</button>
         <button type="button" class="settings-btn-save" id="settingsDialogSave">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="api-dialog-overlay" id="apiDialogOverlay" aria-hidden="true">
+    <div class="api-dialog" role="dialog" aria-modal="true">
+      <div class="api-dialog-header">
+        <input type="text" id="apiUrlInput" placeholder="https://api.example.com/data" spellcheck="false">
+        <button type="button" id="apiFetchBtn">Fetch</button>
+        <button type="button" id="apiDialogClose" style="background:none;color:var(--text);font-size:18px;padding:4px 8px;cursor:pointer;border:none">✕</button>
+      </div>
+      <div class="api-dialog-body">
+        <div class="api-dialog-fields" id="apiFieldsPanel">
+          <div class="api-dialog-fields-title">Fields</div>
+          <div id="apiFieldsList"></div>
+        </div>
+        <div class="api-dialog-template-wrap">
+          <div class="api-dialog-template-title">Template</div>
+          <textarea class="api-dialog-template" id="apiTemplateArea" placeholder="Use ${fieldName} to insert values..."></textarea>
+        </div>
+      </div>
+      <div class="api-dialog-footer">
+        <button type="button" class="api-delete-btn" id="apiDeleteBtn">Delete</button>
+        <button type="button" class="api-cancel-btn" id="apiCancelBtn">Cancel</button>
+        <button type="button" class="api-save-btn" id="apiSaveBtn">Save</button>
       </div>
     </div>
   </div>
@@ -3910,6 +4226,161 @@
       }
     }
 
+    let apis = [];
+    let currentApiId = null;
+
+    function loadApis() {
+      try { apis = JSON.parse(localStorage.getItem('apis') || '[]'); } catch { apis = []; }
+    }
+
+    function saveApis() {
+      try { localStorage.setItem('apis', JSON.stringify(apis)); } catch {}
+    }
+
+    function openApiConfig(id) {
+      const overlay = document.getElementById('apiDialogOverlay');
+      const urlInput = document.getElementById('apiUrlInput');
+      const templateArea = document.getElementById('apiTemplateArea');
+      const fieldsList = document.getElementById('apiFieldsList');
+      const deleteBtn = document.getElementById('apiDeleteBtn');
+      currentApiId = id;
+      const api = id ? apis.find(a => a.id === id) : null;
+      if (api) {
+        urlInput.value = api.url || '';
+        templateArea.value = api.template || '';
+        renderApiFields(api.fields || []);
+        deleteBtn.style.display = '';
+      } else {
+        urlInput.value = '';
+        templateArea.value = '';
+        fieldsList.innerHTML = '<div style="color:var(--text-tertiary);font-size:12px;padding:4px 0">Fetch an API to see fields</div>';
+        deleteBtn.style.display = 'none';
+      }
+      overlay.classList.add('visible');
+    }
+
+    function closeApiConfig() {
+      document.getElementById('apiDialogOverlay').classList.remove('visible');
+      currentApiId = null;
+      _pendingApiData = null;
+    }
+
+    function renderApiFields(fields) {
+      const list = document.getElementById('apiFieldsList');
+      if (!fields || !fields.length) {
+        list.innerHTML = '<div style="color:var(--text-tertiary);font-size:12px;padding:4px 0">No fields found</div>';
+        return;
+      }
+      list.innerHTML = fields.map(f =>
+        `<span class="api-field-badge" draggable="true" data-field="${escapeHtml(f)}">${escapeHtml(f)}</span>`
+      ).join('');
+      list.querySelectorAll('.api-field-badge').forEach(el => {
+        el.addEventListener('dragstart', (e) => {
+          e.dataTransfer.setData('text/plain', '${' + el.dataset.field + '}');
+          e.dataTransfer.effectAllowed = 'copy';
+        });
+      });
+    }
+
+    async function fetchApiData() {
+      const url = document.getElementById('apiUrlInput').value.trim();
+      if (!url) { showToast('\u26A0\uFE0F Enter a URL'); return; }
+      const btn = document.getElementById('apiFetchBtn');
+      btn.disabled = true;
+      btn.textContent = 'Fetching...';
+      const fieldsList = document.getElementById('apiFieldsList');
+      fieldsList.innerHTML = '<div class="api-loading">\u23F3 Fetching...</div>';
+      try {
+        const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        const fields = extractFields(data);
+        _pendingApiData = data;
+        if (currentApiId) apiDataCache[currentApiId] = data;
+        renderApiFields(fields);
+        showToast(`\u2705 Found ${fields.length} field${fields.length > 1 ? 's' : ''}`);
+      } catch (err) {
+        fieldsList.innerHTML = `<div style="color:#ff2d55;font-size:12px;padding:4px 0">\u26A0\uFE0F ${escapeHtml(err.message)}</div>`;
+        showToast('\u26A0\uFE0F Failed to fetch API');
+      }
+      btn.disabled = false;
+      btn.textContent = 'Fetch';
+    }
+
+    function extractFields(data, prefix) {
+      let fields = [];
+      if (Array.isArray(data)) {
+        if (data.length > 0) fields = extractFields(data[0], prefix);
+      } else if (data && typeof data === 'object') {
+        for (const key of Object.keys(data)) {
+          const fullKey = prefix ? prefix + '.' + key : key;
+          const val = data[key];
+          if (val !== null && typeof val === 'object' && !Array.isArray(val)) {
+            fields = fields.concat(extractFields(val, fullKey));
+          } else {
+            fields.push(fullKey);
+          }
+        }
+      }
+      return [...new Set(fields)].sort();
+    }
+
+    function renderApiSidebar() {
+      const listEl = document.getElementById('notesSidebarList');
+      const titleEl = document.getElementById('sidebarTitle');
+      const actionsEl = document.getElementById('sidebarActions');
+      titleEl.textContent = '\uD83D\uDD0C API Integrations';
+      actionsEl.innerHTML = '<button type="button" class="notes-sidebar-add simple" id="apiAddBtn" title="New API integration" aria-label="New API">+</button><button type="button" class="notes-sidebar-close" id="notesSidebarClose" aria-label="Close">\u2715</button>';
+      let html = '';
+      if (!apis.length) {
+        html += '<div class="api-sidebar-empty">No API integrations yet.<br>Click <strong>+</strong> to add one.</div>';
+      } else {
+        apis.forEach(a => {
+          const lastFetch = a.lastFetch ? new Date(a.lastFetch).toLocaleDateString() : 'Never';
+          html += `<div class="api-sidebar-item" data-api-id="${a.id}">
+            <span class="api-icon">🔌</span>
+            <div class="api-info">
+              <div class="api-name">${escapeHtml(a.name || a.url)}</div>
+              <div class="api-meta">${(a.fields || []).length} fields \u00B7 Last fetch: ${lastFetch}</div>
+            </div>
+            <button type="button" class="api-configure-btn" data-api-configure="${a.id}">Configure</button>
+          </div>`;
+        });
+      }
+      listEl.innerHTML = html;
+    }
+
+    function resolveApiTemplate(template, data) {
+      if (!template || !data) return template;
+      return template.replace(/\$\{([^}]+)\}/g, (match, path) => {
+        const parts = path.trim().split('.');
+        let val = data;
+        for (const p of parts) {
+          if (val && typeof val === 'object' && p in val) val = val[p];
+          else return match;
+        }
+        return val != null ? String(val) : match;
+      });
+    }
+
+    let apiDataCache = {};
+    let _pendingApiData = null;
+
+    async function ensureApiData(apiId) {
+      if (apiDataCache[apiId]) return apiDataCache[apiId];
+      const api = apis.find(a => a.id === apiId);
+      if (!api || !api.url) return null;
+      try {
+        const res = await fetch(api.url, { headers: { 'Accept': 'application/json' } });
+        if (!res.ok) return null;
+        const data = await res.json();
+        apiDataCache[apiId] = data;
+        api.lastFetch = Date.now();
+        saveApis();
+        return data;
+      } catch { return null; }
+    }
+
     let canvases = [];
     let currentCanvasId = null;
     let notes = [];
@@ -4221,7 +4692,11 @@
         const escaped = escapeHtml(note.text);
         return `<div class="mermaid-note-wrap"><div class="mermaid" data-mermaid-src="${escaped}">${escaped}</div><!--<button class="mermaid-toggle-btn" data-toggle-mermaid="${note.id}">\u270F\uFE0F</button>--></div>`;
       }
-      let html = note.format === 'markdown' ? renderMarkdown(note.text) : renderPlainNote(note.text);
+      let text = note.text || '';
+      if (note.apiId && apiDataCache[note.apiId]) {
+        text = resolveApiTemplate(text, apiDataCache[note.apiId]);
+      }
+      let html = note.format === 'markdown' ? renderMarkdown(text) : renderPlainNote(text);
       if (currentFindQuery) {
         html = highlightText(html, currentFindQuery);
       }
@@ -4245,6 +4720,7 @@
         color: getRandomColor(),
         tags: [],
         dir: 'ltr',
+        apiId: null,
         created: Date.now(),
         visible: true,
         archived: false,
@@ -4755,6 +5231,9 @@
         }
         html += '</div>';
 
+      } else if (sidebarMode === 'api') {
+        renderApiSidebar();
+        return;
       } else {
         titleEl.textContent = '\uD83D\uDCCC Notes';
         actionsEl.innerHTML = '<button type="button" class="notes-sidebar-add simple" id="notesSidebarAddSimple" title="New simple note" aria-label="New simple note">+</button><button type="button" class="notes-sidebar-add markdown" id="notesSidebarAddMarkdown" title="New markdown note" aria-label="New markdown note">Md</button><button type="button" class="notes-sidebar-close" id="notesSidebarClose" aria-label="Close notes">\u2715</button>';
@@ -5451,7 +5930,7 @@
           <button class="note-pin-btn${n.pinned ? ' pinned' : ''}" data-pin-id="${n.id}" title="${n.pinned ? 'Unpin' : 'Pin'}">${n.pinned ? '\uD83D\uDCCD' : '\uD83D\uDCCC'}</button>
           <button class="note-copy-btn" data-copy-id="${n.id}" title="Copy to clipboard">\uD83D\uDCCB</button>
           <button class="note-dir-btn${n.dir === 'rtl' ? ' rtl' : ''}" data-dir-id="${n.id}" title="Toggle text direction">${n.dir === 'rtl' ? '\u2794' : '\u2190'}</button>
-          <div class="draggable-note-time">${time}</div>
+          <div class="draggable-note-time">${n.apiId ? '\uD83D\uDD0C\uFE0F ' : ''}${time}</div>
           <div class="draggable-note-text ${n.format === 'markdown' ? 'note-markdown' : n.format === 'mermaid' ? 'note-mermaid' : 'note-plain'}" dir="${n.dir || 'ltr'}" data-text-id="${n.id}">${renderNoteContent(n)}</div>
           ${n.tags && n.tags.length ? `<div class="draggable-note-tags">${n.tags.map(t => `<span class="note-tag" data-tag-name="${t}">${escapeHtml(t)}<button class="note-tag-remove" data-tag-rm="${n.id}" data-tag-name="${t}">✕</button></span>`).join('')}</div>` : ''}
           ${handleHTML}`;
@@ -5959,6 +6438,7 @@
     document.addEventListener('click', (e) => {
       if (e.target.id === 'notesSidebarAddSimple' || e.target.closest('#notesSidebarAddSimple')) createSimpleNote(null);
       if (e.target.id === 'notesSidebarAddMarkdown' || e.target.closest('#notesSidebarAddMarkdown')) createMarkdownNote(null);
+      if (e.target.id === 'apiAddBtn' || e.target.closest('#apiAddBtn')) openApiConfig(null);
     });
 
     document.getElementById('confirmDialogCancel').addEventListener('click', () => hideConfirmDialog(false));
@@ -6099,6 +6579,9 @@
         ${note.format !== 'mermaid' ? `<div class="context-menu-item" data-note-action="diagram" data-note-id="${noteId}">\uD83E\uDE84 Convert to Mermaid</div>` : ''}
         <div class="context-menu-item" data-note-action="dir" data-note-id="${noteId}">\u2194 ${note.dir === 'rtl' ? 'LTR' : 'RTL'}</div>
         <div class="context-menu-divider"></div>
+        <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-tertiary);padding:4px 14px 6px;">API Data</div>
+        ${apis.length ? apis.map(a => `<div class="context-menu-item context-menu-item-sm" data-note-action="api-link" data-note-id="${noteId}" data-api-id="${a.id}">${note.apiId === a.id ? '\u25CF' : '\u25CB'} ${escapeHtml(a.name)}</div>`).join('') : '<div style="font-size:11px;color:var(--text-tertiary);padding:2px 14px 4px">No APIs configured</div>'}
+        <div class="context-menu-divider"></div>
         <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-tertiary);padding:4px 14px 6px;">Move to Canvas</div>
         ${canvasItems}
       `;
@@ -6186,6 +6669,20 @@
             const note = notes.find(n => n.id === nid);
             if (note) {
               note.dir = note.dir === 'rtl' ? 'ltr' : 'rtl';
+              saveCanvasData();
+              renderStickyNotes();
+              renderSidebar();
+            }
+          }
+          else if (nid && naction === 'api-link') {
+            const note = notes.find(n => n.id === nid);
+            const apiId = noteActionItem.dataset.apiId;
+            if (note) {
+              note.apiId = note.apiId === apiId ? null : apiId;
+              if (note.apiId && apiDataCache[note.apiId]) {
+              } else if (note.apiId) {
+                ensureApiData(note.apiId).then(() => { renderStickyNotes(); renderSidebar(); });
+              }
               saveCanvasData();
               renderStickyNotes();
               renderSidebar();
@@ -6525,7 +7022,113 @@
       if (e.key === 'Escape' && document.getElementById('settingsDialogOverlay').classList.contains('visible')) {
         closeSettingsDialog();
       }
+      if (e.key === 'Escape' && document.getElementById('apiDialogOverlay').classList.contains('visible')) {
+        closeApiConfig();
+      }
     });
+
+    document.getElementById('apiToggleBtn').addEventListener('click', () => {
+      if (sidebarOpen && sidebarMode === 'api') { closeSidebar(); return; }
+      openSidebar('api');
+    });
+
+    document.getElementById('apiFetchBtn').addEventListener('click', fetchApiData);
+
+    document.getElementById('apiUrlInput').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') fetchApiData();
+    });
+
+    document.getElementById('apiDialogClose').addEventListener('click', closeApiConfig);
+    document.getElementById('apiCancelBtn').addEventListener('click', closeApiConfig);
+    document.getElementById('apiDialogOverlay').addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) closeApiConfig();
+    });
+
+    document.getElementById('apiSaveBtn').addEventListener('click', () => {
+      const url = document.getElementById('apiUrlInput').value.trim();
+      const template = document.getElementById('apiTemplateArea').value;
+      if (!url) { showToast('\u26A0\uFE0F URL is required'); return; }
+      const api = currentApiId ? apis.find(a => a.id === currentApiId) : null;
+      if (api) {
+        api.url = url;
+        api.template = template;
+        saveApis();
+        showToast('\u2705 API updated');
+      } else {
+        const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+        if (_pendingApiData) apiDataCache[id] = _pendingApiData;
+        _pendingApiData = null;
+        apis.push({
+          id,
+          name: url.replace(/https?:\/\//, '').split('/')[0] || url,
+          url,
+          fields: [...document.querySelectorAll('.api-field-badge')].map(el => el.dataset.field).filter(Boolean),
+          template,
+          lastFetch: Date.now(),
+        });
+        saveApis();
+        showToast('\u2705 API added');
+      }
+      closeApiConfig();
+      if (sidebarOpen && sidebarMode === 'api') renderSidebar();
+    });
+
+    document.getElementById('apiDeleteBtn').addEventListener('click', () => {
+      if (!currentApiId) return;
+      apis = apis.filter(a => a.id !== currentApiId);
+      saveApis();
+      closeApiConfig();
+      if (sidebarOpen && sidebarMode === 'api') renderSidebar();
+      showToast('\uD83D\uDDD1\uFE0F API deleted');
+    });
+
+    document.getElementById('notesSidebarList').addEventListener('click', (e) => {
+      const configureBtn = e.target.closest('[data-api-configure]');
+      if (configureBtn) {
+        openApiConfig(configureBtn.dataset.apiConfigure);
+        return;
+      }
+      const apiItem = e.target.closest('.api-sidebar-item');
+      if (apiItem) {
+        const id = apiItem.dataset.apiId;
+        const api = apis.find(a => a.id === id);
+        if (api && api.template) {
+          closeSidebar();
+          createNote(api.template, { format: 'plain', startEditing: true });
+          if (apiDataCache[id]) {
+            const note = notes[0];
+            if (note) note.apiId = id;
+            saveCanvasData();
+          }
+        }
+      }
+    });
+
+    document.getElementById('apiTemplateArea').addEventListener('dragover', (e) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'copy';
+      e.currentTarget.classList.add('drag-over');
+    });
+
+    document.getElementById('apiTemplateArea').addEventListener('dragleave', (e) => {
+      e.currentTarget.classList.remove('drag-over');
+    });
+
+    document.getElementById('apiTemplateArea').addEventListener('drop', (e) => {
+      e.preventDefault();
+      e.currentTarget.classList.remove('drag-over');
+      const text = e.dataTransfer.getData('text/plain');
+      if (text) {
+        const ta = e.currentTarget;
+        const start = ta.selectionStart;
+        const end = ta.selectionEnd;
+        ta.value = ta.value.substring(0, start) + text + ta.value.substring(end);
+        ta.selectionStart = ta.selectionEnd = start + text.length;
+        ta.focus();
+      }
+    });
+
+    loadApis();
   </script>
   </body>
   </html>
