@@ -33,6 +33,9 @@
         --shadow-focus: 0 4px 8px rgba(0,0,0,0.02), 0 16px 32px rgba(0,0,0,0.06), 0 32px 64px rgba(0,0,0,0.06);
         --radius: 16px;
         --radius-sm: 10px;
+        --mermaid-fill: #e8f4fd;
+        --mermaid-stroke: #4a90d9;
+        --mermaid-text: #1a1a2e;
       }
 
       @media (prefers-color-scheme: dark) {        
@@ -2016,6 +2019,55 @@
         color: #34c759;
       }
 
+      .note-dir-btn {
+        position: absolute;
+        top: 6px;
+        right: 134px;
+        width: 22px;
+        height: 22px;
+        border: none;
+        border-radius: 50%;
+        background: rgba(0,0,0,0.08);
+        color: rgba(0,0,0,0.35);
+        font-size: 11px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.15s, background 0.15s, color 0.15s;
+        z-index: 10;
+      }
+
+      .draggable-note:hover .note-dir-btn {
+        opacity: 1;
+      }
+
+      .note-dir-btn:hover {
+        background: rgba(0,0,0,0.15);
+        color: rgba(0,0,0,0.6);
+      }
+
+      .note-dir-btn.rtl {
+        background: rgba(0,122,255,0.2);
+        color: #007aff;
+      }
+
+      .note-dir-btn.rtl:hover {
+        background: rgba(0,122,255,0.3);
+        color: #0066d6;
+      }
+
+      .draggable-note-text[dir="rtl"] {
+        direction: rtl;
+        text-align: right;
+      }
+
+      .draggable-note-text[dir="ltr"] {
+        direction: ltr;
+        text-align: left;
+      }
+
       .draggable-note.dimmed {
         opacity: 0.08 !important;
         pointer-events: none !important;
@@ -2786,7 +2838,7 @@
       .note-tag-btn {
         position: absolute;
         top: 6px;
-        right: 132px;
+        right: 159px;
         width: 22px;
         height: 22px;
         border: none;
@@ -3806,7 +3858,7 @@
 
     async function doChatToMermaid(prompt, systemPrompt, actionLabel) {
       closeSearch();
-      const sysMsg = systemPrompt || 'You are a diagram expert. Convert the provided text into a Mermaid diagram. Return ONLY valid Mermaid syntax without markdown code fences, without explanation, without any additional text. The output must start directly with the mermaid diagram type (e.g., flowchart TD, sequenceDiagram, classDiagram, erDiagram, gantt, stateDiagram-v2, pie, gitGraph, etc.).';
+      const sysMsg = systemPrompt || 'You are a diagram expert. Convert the provided text into a Mermaid diagram. Return ONLY valid Mermaid syntax without markdown code fences, without explanation, without any additional text. The output must start directly with the mermaid diagram type (e.g., flowchart TD, sequenceDiagram, classDiagram, erDiagram, gantt, stateDiagram-v2, pie, gitGraph, etc.). Use attractive colors and styles where possible with classDef and linkStyle. Do NOT add your own styling comments.';
       lastSlashCmd = { systemPrompt: sysMsg, label: actionLabel, prompt };
       const noteId = createNote('', { format: 'mermaid', startEditing: false });
       const noteEl = document.querySelector(`.draggable-note[data-id="${noteId}"]`);
@@ -3828,6 +3880,7 @@
         const data = await res.json();
         let reply = data.choices[0]?.message?.content || data.message?.content || data.response || JSON.stringify(data);
         reply = reply.replace(/^```mermaid\s*\n?/i, '').replace(/\n?```\s*$/i, '').trim();
+        reply = styleMermaidDiagram(reply);
         const note = notes.find(n => n.id === noteId);
         if (note) {
           note.text = reply;
@@ -3843,7 +3896,8 @@
       } catch (err) {
         const note = notes.find(n => n.id === noteId);
         if (note) {
-          note.text = `flowchart TD\n    A[Error] --> B["${err.message || 'Request failed'}"]`;
+          const errText = `flowchart TD\n    A[Error] --> B["${err.message || 'Request failed'}"]`;
+          note.text = styleMermaidDiagram(errText);
           note.format = 'mermaid';
           saveCanvasData();
           const el = document.querySelector(`.draggable-note[data-id="${noteId}"] .draggable-note-text`);
@@ -4190,6 +4244,7 @@
         z: getNextNoteZ(),
         color: getRandomColor(),
         tags: [],
+        dir: 'ltr',
         created: Date.now(),
         visible: true,
         archived: false,
@@ -4403,8 +4458,31 @@
     };
 
     function getMermaidTemplate(type) {
-      return MERMAID_TEMPLATES[type] || `flowchart TD
+      let tpl = MERMAID_TEMPLATES[type] || `flowchart TD
     A[Start] --> B[End]`;
+      return styleMermaidDiagram(tpl);
+    }
+
+    function styleMermaidDiagram(text) {
+      const first = text.trim().split('\n')[0] || '';
+      const lc = first.toLowerCase();
+      if (lc.includes('flowchart') || lc.includes('graph ')) {
+        return text + `\n    classDef default fill:var(--mermaid-fill,#e8f4fd),stroke:var(--mermaid-stroke,#4a90d9),stroke-width:2px,color:var(--mermaid-text,#1a1a2e);
+    linkStyle default stroke:var(--mermaid-stroke,#4a90d9),stroke-width:2px,fill:none;`;
+      }
+      if (lc.includes('sequencediagram')) {
+        return text + ``; // sequence diagrams have limited styling support
+      }
+      if (lc.includes('classdiagram')) {
+        return text + ``;
+      }
+      if (lc.includes('gantt')) {
+        return text + ``;
+      }
+      if (lc.includes('statediagram')) {
+        return text + `\n    classDef default fill:var(--mermaid-fill,#e8f4fd),stroke:var(--mermaid-stroke,#4a90d9),stroke-width:2px,color:var(--mermaid-text,#1a1a2e);`;
+      }
+      return text;
     }
 
     function createMermaidNote(type) {
@@ -4416,6 +4494,7 @@
         z: getNextNoteZ(),
         color: getRandomColor(),
         tags: ['mermaid'],
+        dir: 'ltr',
         created: Date.now(),
         visible: true,
         archived: false,
@@ -5371,13 +5450,14 @@
           <button class="note-tag-btn" data-tag-id="${n.id}" title="Tags">#</button>
           <button class="note-pin-btn${n.pinned ? ' pinned' : ''}" data-pin-id="${n.id}" title="${n.pinned ? 'Unpin' : 'Pin'}">${n.pinned ? '\uD83D\uDCCD' : '\uD83D\uDCCC'}</button>
           <button class="note-copy-btn" data-copy-id="${n.id}" title="Copy to clipboard">\uD83D\uDCCB</button>
+          <button class="note-dir-btn${n.dir === 'rtl' ? ' rtl' : ''}" data-dir-id="${n.id}" title="Toggle text direction">${n.dir === 'rtl' ? '\u2794' : '\u2190'}</button>
           <div class="draggable-note-time">${time}</div>
-          <div class="draggable-note-text ${n.format === 'markdown' ? 'note-markdown' : n.format === 'mermaid' ? 'note-mermaid' : 'note-plain'}" data-text-id="${n.id}">${renderNoteContent(n)}</div>
+          <div class="draggable-note-text ${n.format === 'markdown' ? 'note-markdown' : n.format === 'mermaid' ? 'note-mermaid' : 'note-plain'}" dir="${n.dir || 'ltr'}" data-text-id="${n.id}">${renderNoteContent(n)}</div>
           ${n.tags && n.tags.length ? `<div class="draggable-note-tags">${n.tags.map(t => `<span class="note-tag" data-tag-name="${t}">${escapeHtml(t)}<button class="note-tag-remove" data-tag-rm="${n.id}" data-tag-name="${t}">✕</button></span>`).join('')}</div>` : ''}
           ${handleHTML}`;
 
         el.addEventListener('mousedown', (e) => {
-          if (e.target.closest('.draggable-note-delete') || e.target.closest('.note-resize-handle') || e.target.closest('.note-edit-btn') || e.target.closest('.note-focus-btn') || e.target.closest('.note-tag-btn') || e.target.closest('.note-pin-btn') || e.target.closest('.note-copy-btn') || e.target.closest('.mermaid-toggle-btn')) return;
+          if (e.target.closest('.draggable-note-delete') || e.target.closest('.note-resize-handle') || e.target.closest('.note-edit-btn') || e.target.closest('.note-focus-btn') || e.target.closest('.note-tag-btn') || e.target.closest('.note-pin-btn') || e.target.closest('.note-copy-btn') || e.target.closest('.note-dir-btn') || e.target.closest('.mermaid-toggle-btn')) return;
           if (e.target.closest('.draggable-note-text.editing')) return;
           if (e.button !== 0) return;
 
@@ -5468,6 +5548,19 @@
             } catch {
               showToast('\u26A0\uFE0F Failed to copy');
             }
+          });
+        }
+
+        const dirBtn = el.querySelector('.note-dir-btn');
+        if (dirBtn) {
+          dirBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            n.dir = n.dir === 'rtl' ? 'ltr' : 'rtl';
+            saveCanvasData();
+            dirBtn.classList.toggle('rtl');
+            dirBtn.textContent = n.dir === 'rtl' ? '\u2794' : '\u2190';
+            if (textEl) textEl.setAttribute('dir', n.dir);
+            renderSidebar();
           });
         }
 
@@ -6004,6 +6097,7 @@
         <div class="context-menu-item" data-note-action="copy" data-note-id="${noteId}">\uD83D\uDCCB Copy Text</div>
         <div class="context-menu-item" data-note-action="duplicate" data-note-id="${noteId}">\uD83D\uDCCB Duplicate</div>
         ${note.format !== 'mermaid' ? `<div class="context-menu-item" data-note-action="diagram" data-note-id="${noteId}">\uD83E\uDE84 Convert to Mermaid</div>` : ''}
+        <div class="context-menu-item" data-note-action="dir" data-note-id="${noteId}">\u2194 ${note.dir === 'rtl' ? 'LTR' : 'RTL'}</div>
         <div class="context-menu-divider"></div>
         <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-tertiary);padding:4px 14px 6px;">Move to Canvas</div>
         ${canvasItems}
@@ -6088,6 +6182,15 @@
             }
           }
           else if (nid && (naction === 'pin' || naction === 'unpin')) togglePinNote(nid);
+          else if (nid && naction === 'dir') {
+            const note = notes.find(n => n.id === nid);
+            if (note) {
+              note.dir = note.dir === 'rtl' ? 'ltr' : 'rtl';
+              saveCanvasData();
+              renderStickyNotes();
+              renderSidebar();
+            }
+          }
           closeContextMenu();
           return;
         }
