@@ -1,0 +1,1367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>LiteGraph Transaction Rules</title>
+  <script src="https://cdn.jsdelivr.net/gh/jagenjo/litegraph.js@master/build/litegraph.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jagenjo/litegraph.js@master/css/litegraph.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+
+    body { margin: 0;  font-family: 'Poppins', sans-serif;  overflow: hidden; }
+
+    /* Sidebar */
+    #sidebar {
+      width: 220px;
+      background: linear-gradient(180deg, rgba(11,18,32,0.95), rgba(16,28,52,0.92));
+      color: white;
+      padding: 12px;
+      box-sizing: border-box;
+      height: 100vmin;
+      position: absolute;
+      z-index: 999;
+      border-right: 1px solid rgba(46, 79, 151, 0.4);
+      box-shadow: 2px 0 15px rgba(0,0,0,0.3);
+    }
+
+    #sidebar h3 {
+      margin: 0 0 10px 0;
+      font-size: 16px;
+      color: #74b9ff;
+      border-bottom: 1px solid rgba(46, 79, 151, 0.5);
+      padding-bottom: 8px;
+      letter-spacing: 0.5px;
+    }
+
+    .node-item {
+      background: linear-gradient(135deg, #0E3386, #1a4aab);
+      padding: 8px 10px;
+      margin: 5px 0;
+      cursor: grab;
+      border-radius: 6px;
+      text-align: center;
+      font-size: 0.85rem;
+      font-weight: 500;
+      border: 1px solid rgba(116, 185, 255, 0.15);
+      transition: all 0.15s ease;
+      user-select: none;
+    }
+
+    .node-item:hover {
+      background: linear-gradient(135deg, #1a4aab, #6bb2fa);
+      border-color: rgba(116, 185, 255, 0.5);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(46, 79, 151, 0.3);
+    }
+
+    .node-item:active {
+      transform: translateY(0);
+      cursor: grabbing;
+    }
+
+    #searchNodes {
+      width:100%; padding:7px 9px; margin:0 0 10px 0; border-radius:6px;
+      border:1px solid rgba(46,79,151,0.4); background:rgba(11,18,32,0.8);
+      color:#fff; box-sizing:border-box; font-family:'Poppins',sans-serif;
+      font-size:13px; outline:none; transition:border-color 0.15s;
+    }
+    #searchNodes:focus { border-color: #74b9ff; }
+    #searchNodes::placeholder { color: rgba(255,255,255,0.3); }
+
+    /* Graph canvas */
+    #graph-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+    }
+    #graph-container canvas {
+      width: 100% !important;
+      height: 100% !important;
+    }
+
+    /* RIGHT JSON PANEL */
+    #json-panel {
+        width: 300px;
+        height: 100vmin;
+        background: linear-gradient(180deg, rgba(11,18,32,0.95), rgba(16,28,52,0.92));
+        color: #00ff90;
+        padding: 15px;
+        box-sizing: border-box;
+        overflow: auto;
+        position: absolute;
+        z-index: 999;
+        right: 0;
+        display: none;
+        border-left: 1px solid rgba(46, 79, 151, 0.4);
+        box-shadow: -2px 0 15px rgba(0,0,0,0.3);
+    }
+
+    #json-panel h3 {
+      margin: 0 0 10px 0;
+      color: #74b9ff;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(46, 79, 151, 0.5);
+      font-size: 15px;
+      letter-spacing: 0.5px;
+    }
+
+    #json-output {
+      white-space: pre-wrap;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .btn-row { display:flex; gap:8px; margin:8px 0 12px; }
+    button {
+      background: linear-gradient(135deg, #1a4aab, #0E3386);
+      color:#fff; border:1px solid rgba(116,185,255,0.2); border-radius:6px;
+      padding:6px 12px; cursor:pointer; font-size:12px; font-family:'Poppins',sans-serif;
+      transition: all 0.15s ease; font-weight:500;
+    }
+    button:hover {
+      background: linear-gradient(135deg, #2a5abc, #6bb2fa);
+      border-color: rgba(116,185,255,0.5);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(46,79,151,0.3);
+    }
+    button:active { transform: translateY(0); }
+    .hint { font-size:12px; margin-top:10px; line-height:1.4; color:#fdcb6e;}
+
+    /* Toolbar */
+    #graph-toolbar {
+      position: absolute;
+      top: 10px;
+      left: 240px;
+      z-index: 1000;
+      display: flex;
+      gap: 6px;
+      background: rgba(11, 18, 32, 0.75);
+      padding: 6px 10px;
+      border-radius: 8px;
+      border: 1px solid rgba(46, 79, 151, 0.3);
+      backdrop-filter: blur(8px);
+    }
+    #graph-toolbar button {
+      font-size: 11px;
+      padding: 5px 10px;
+      background: rgba(46, 79, 151, 0.5);
+      border: 1px solid rgba(116, 185, 255, 0.15);
+      letter-spacing: 0.3px;
+    }
+    #graph-toolbar button:hover {
+      background: rgba(46, 79, 151, 0.8);
+      border-color: rgba(116, 185, 255, 0.4);
+    }
+    #graph-toolbar button:active { transform: none; }
+
+    /* ============= Floating Chat ============= */
+    #chat-toggle {
+      position: fixed; bottom: 24px; right: 24px; z-index: 2000;
+      width: 52px; height: 52px; border-radius: 50%;
+      background: linear-gradient(135deg, #1a4aab, #0E3386);
+      border: 2px solid rgba(116,185,255,0.3);
+      color: #fff; font-size: 22px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 20px rgba(46,79,151,0.5);
+      transition: all 0.2s ease;
+    }
+    #chat-toggle:hover {
+      transform: scale(1.08);
+      border-color: rgba(116,185,255,0.7);
+      box-shadow: 0 6px 28px rgba(46,79,151,0.7);
+    }
+
+    #chat-panel {
+      position: fixed; bottom: 88px; right: 24px; z-index: 2000;
+      width: 380px; height: 520px;
+      background: rgba(11,18,32,0.96);
+      border: 1px solid rgba(46,79,151,0.5);
+      border-radius: 14px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+      display: none; flex-direction: column;
+      backdrop-filter: blur(12px);
+      overflow: hidden;
+    }
+    #chat-panel.open { display: flex; }
+
+    #chat-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 16px;
+      border-bottom: 1px solid rgba(46,79,151,0.4);
+      background: rgba(30,55,110,0.4);
+    }
+    #chat-header h3 { margin:0; font-size:14px; color:#74b9ff; }
+    #chat-header button {
+      background:none; border:none; color:rgba(255,255,255,0.6); cursor:pointer;
+      font-size:16px; padding:2px 6px;
+    }
+    #chat-header button:hover { color:#fff; }
+
+    #chat-messages {
+      flex:1; overflow-y:auto; padding:12px 14px;
+      display:flex; flex-direction:column; gap:10px;
+    }
+    #chat-messages .msg {
+      max-width:85%; padding:9px 13px; border-radius:10px;
+      font-size:13px; line-height:1.45; word-wrap:break-word;
+    }
+    #chat-messages .msg.user {
+      align-self:flex-end;
+      background: rgba(26,74,171,0.6);
+      border:1px solid rgba(116,185,255,0.2);
+      color:#fff;
+    }
+    #chat-messages .msg.bot {
+      align-self:flex-start;
+      background: rgba(30,55,110,0.4);
+      border:1px solid rgba(46,79,151,0.3);
+      color:#c8d6e5;
+    }
+    #chat-messages .msg.bot.success {
+      border-color: rgba(0,255,144,0.3);
+    }
+    #chat-messages .msg.bot.error {
+      border-color: rgba(255,100,100,0.4);
+      color:#ff6b6b;
+    }
+    #chat-messages .msg-status {
+      font-size:12px; color:rgba(255,255,255,0.4); text-align:center;
+      padding:4px 0;
+    }
+
+    #chat-input-row {
+      display:flex; gap:8px; padding:10px 14px;
+      border-top:1px solid rgba(46,79,151,0.3);
+      background: rgba(11,18,32,0.8);
+    }
+    #chat-input {
+      flex:1;
+      padding:9px 12px; border-radius:8px;
+      border:1px solid rgba(46,79,151,0.4);
+      background: rgba(11,18,32,0.8);
+      color:#fff; font-family:'Poppins',sans-serif; font-size:13px;
+      outline:none; resize:none;
+    }
+    #chat-input:focus { border-color:#74b9ff; }
+    #chat-input::placeholder { color:rgba(255,255,255,0.25); }
+    #chat-send {
+      padding:8px 16px; border-radius:8px; font-size:13px;
+      background: linear-gradient(135deg, #1a4aab, #0E3386);
+      border:1px solid rgba(116,185,255,0.2);
+      color:#fff; cursor:pointer; font-weight:600;
+      transition: all 0.15s;
+    }
+    #chat-send:hover {
+      background: linear-gradient(135deg, #2a5abc, #6bb2fa);
+      border-color: rgba(116,185,255,0.5);
+    }
+    #chat-send:disabled { opacity:0.5; cursor:not-allowed; }
+    #chat-send.loading::after {
+      content: " ...";
+      animation: dots 1s steps(3) infinite;
+    }
+    @keyframes dots { 33% { content: "."; } 66% { content: ".."; } }
+
+    /* ============= Settings Modal ============= */
+    #modal-overlay {
+      position:fixed; inset:0; z-index:3000;
+      background:rgba(0,0,0,0.6);
+      display:none; align-items:center; justify-content:center;
+      backdrop-filter:blur(4px);
+    }
+    #modal-overlay.open { display:flex; }
+
+    #modal-box {
+      width:440px;
+      background:rgba(11,18,32,0.97);
+      border:1px solid rgba(46,79,151,0.5);
+      border-radius:14px;
+      box-shadow:0 12px 50px rgba(0,0,0,0.7);
+      padding:22px 26px;
+    }
+    #modal-box h3 { margin:0 0 16px 0; color:#74b9ff; font-size:15px; }
+    #modal-box label {
+      display:block; font-size:12px; color:rgba(255,255,255,0.6); margin:10px 0 4px;
+    }
+    #modal-box input, #modal-box textarea {
+      width:100%; padding:8px 10px; border-radius:6px;
+      border:1px solid rgba(46,79,151,0.4);
+      background:rgba(11,18,32,0.8);
+      color:#fff; font-family:'Poppins',sans-serif; font-size:13px;
+      outline:none; box-sizing:border-box;
+    }
+    #modal-box input:focus, #modal-box textarea:focus { border-color:#74b9ff; }
+    #modal-box textarea { resize:vertical; min-height:60px; }
+    #modal-box .modal-btns {
+      display:flex; gap:10px; justify-content:flex-end; margin-top:18px;
+    }
+    #modal-box .modal-btns button { font-size:12px; }
+    #modal-box .modal-btns .btn-secondary {
+      background:rgba(255,255,255,0.08); border-color:rgba(255,255,255,0.1);
+    }
+    #modal-box .modal-btns .btn-secondary:hover {
+      background:rgba(255,255,255,0.15);
+    }
+
+  </style>
+</head>
+<body>
+     <!-- Sidebar -->
+  <div id="sidebar">
+    <h3>Nodes</h3>
+    <input type="text" id="searchNodes" placeholder="Search nodes..." style="width:100%;padding:6px;margin:0 0 8px 0;border-radius:4px;border:1px solid #444;background:#1a1a2e;color:#fff;box-sizing:border-box;">
+    <div id="node-list">
+      <div class="node-item" draggable="true" data-type="rules/TransactionRule">Transaction Rule</div>
+      <div class="node-item" draggable="true" data-type="rules/RuleGroup">Rule Group</div>
+      <div class="node-item" draggable="true" data-type="rules/LogicCombiner">Logic Combiner</div>
+      <div class="node-item" draggable="true" data-type="rules/ExportJSON">Export JSON</div>
+    </div>
+  </div>
+
+    <!-- RIGHT JSON PANEL -->
+    <!-- <div id="json-panel">
+        <h3>Live JSON Preview</h3>
+        <pre id="json-output">{}</pre>
+      </div> -->
+
+      <div id="json-panel">
+        <h3>Live JSON Preview</h3>
+        <div class="btn-row">
+          <button id="btnCopy" type="button">Copy JSON</button>
+          <button id="btnClear" type="button">Clear</button>
+        </div>
+        <pre id="json-output">{}</pre>
+        <div class="hint">
+          Unlimited nesting: connect Logic Combiner outputs into other Logic Combiner inputs (A/B), then into Export JSON.
+        </div>
+      </div>
+    
+
+  <div id="graph-container">
+    <div id="graph-toolbar">
+      <button id="btnGroup" type="button">Group Selected</button>
+      <button id="btnUngroup" type="button">Ungroup</button>
+      <button id="btnCollapse" type="button">Toggle Collapse</button>
+    </div>
+    <canvas id="graph"></canvas>
+  </div>
+
+
+  <script>
+    const LiteGraph = window.LiteGraph;
+    let lastPreviewJSON = "{}";
+       // Operator sets by value type
+    const OPERATORS_NUMERIC = [">","<","=","!="];
+    const OPERATORS_TEXT    = ["=","!=","CONTAINS"];
+    const OPERATORS_DATE    = [">","<","=","!="]; // common choice; adjust if you like
+
+    // Predefined selectable fields
+     const CATEGORY_FIELDS = [
+      "history",
+      "transaction",
+      "profile",
+      "baseInfo",
+      "dictionary",
+      "constant",      
+    ];
+
+    // Field definition: type + allowed operators + optional dropdown options
+    const FIELD_DEFS = {
+    amount: {
+        label: "Amount",
+        valueType: "number",
+        operators: OPERATORS_NUMERIC
+    },
+    country: {
+        label: "Country",
+        valueType: "text",
+        operators: OPERATORS_TEXT
+    },
+    currency: {
+        label: "Currency",
+        valueType: "text",
+        operators: OPERATORS_TEXT
+    },
+    merchant: {
+        label: "Merchant",
+        valueType: "text",
+        operators: OPERATORS_TEXT
+    },
+    status: {
+        label: "Status",
+        valueType: "dropdown",
+        operators: OPERATORS_TEXT,
+        options: ["APPROVED", "REJECTED", "PENDING"]
+    },
+    channel: {
+        label: "Channel",
+        valueType: "text",
+        operators: OPERATORS_TEXT
+    },
+
+    // Optional example date field:
+    transactionDate: {
+        label: "Transaction Date",
+        valueType: "date",
+        operators: OPERATORS_DATE
+    }
+    };
+
+    const FIELD_KEYS = Object.keys(FIELD_DEFS);
+
+function TransactionRuleNode() {
+  this.addOutput("rule", "rule");
+
+  // defaults
+  this.properties = {
+    field: "amount",
+    operator: ">",     // will be validated by updateWidgetsForField()
+    value: "1000"
+  };
+
+  // Keep widget references so we can replace them
+  this._wField = null;
+  this._wOperator = null;
+  this._wValue = null;
+
+  this._makeWidgets();
+  this.updateWidgetsForField(true);
+}
+
+TransactionRuleNode.title = "Transaction Rule";
+
+TransactionRuleNode.prototype._makeWidgets = function() {
+    // Field widget
+    this._wField = this.addWidget(
+    "combo",
+    "Category",
+    this.properties.field,
+    (v) => {
+      this.properties.field = v;
+      this.updateWidgetsForField(false);
+      updateJSONPreview();
+    },
+    { values: CATEGORY_FIELDS }
+  );
+
+
+  // Field widget
+  this._wField = this.addWidget(
+    "combo",
+    "Field",
+    this.properties.field,
+    (v) => {
+      this.properties.field = v;
+      this.updateWidgetsForField(false);
+      updateJSONPreview();
+    },
+    { values: FIELD_KEYS }
+  );
+
+  // Value widget placeholder; will be replaced in updateWidgetsForField()
+  // We'll start with a text widget
+  this._wValue = this.addWidget(
+    "text",
+    "Value",
+    this.properties.value,
+    (v) => {
+      this.properties.value = v;
+      updateJSONPreview();
+    }
+  );
+    // Operator widget (initial placeholder)
+  this._wOperator = this.addWidget(
+    "combo",
+    "Operator",
+    this.properties.operator,
+    (v) => {
+      this.properties.operator = v;
+      updateJSONPreview();
+    },
+    { values: ["=","!="] }
+  );
+
+  this._wField = this.addWidget(
+    "combo",
+    "Category",
+    this.properties.field,
+    (v) => {
+      this.properties.field = v;
+      this.updateWidgetsForField(false);
+      updateJSONPreview();
+    },
+    { values: CATEGORY_FIELDS }
+  );
+
+    // Field widget
+    this._wField = this.addWidget(
+    "combo",
+    "Field",
+    this.properties.field,
+    (v) => {
+      this.properties.field = v;
+      this.updateWidgetsForField(false);
+      updateJSONPreview();
+    },
+    { values: FIELD_KEYS }
+  );
+
+  this._wValue = this.addWidget(
+    "text",
+    "Value",
+    this.properties.value,
+    (v) => {
+      this.properties.value = v;
+      updateJSONPreview();
+    }
+  );
+
+};
+
+TransactionRuleNode.prototype.updateWidgetsForField = function(isInit) {
+  const def = FIELD_DEFS[this.properties.field];
+  if (!def) return;
+
+  // 1) Operator filtering: ensure current operator is allowed for this field
+  const allowedOps = def.operators || [];
+  if (!allowedOps.includes(this.properties.operator)) {
+    // pick first allowed operator or fallback
+    this.properties.operator = allowedOps[0] ?? "=";
+    if (!isInit) updateJSONPreview();
+  }
+
+  // 2) Update operator combo values
+  if (this._wOperator) {
+    this._wOperator.options.values = allowedOps;
+    this._wOperator.value = this.properties.operator;
+    // LiteGraph may not re-render options immediately; force refresh on next tick
+    this.setDirtyCanvas(true, true);
+  }
+
+  // 3) Update value widget type based on valueType
+  const vt = def.valueType;
+
+  // Replace the existing widget with a new one using the same index strategy:
+  // Widgets are stored in this.widgets array; removing/re-adding is the most reliable.
+  const widgets = this.widgets;
+
+  // Find widget indices by reference
+  const operatorIdx = widgets.indexOf(this._wOperator);
+  const valueIdx = widgets.indexOf(this._wValue);
+
+  // Remove & re-add value widget at valueIdx
+  if (valueIdx !== -1) widgets.splice(valueIdx, 1);
+
+  // Create correct widget for valueType
+  let valueWidget;
+  const currentValue = this.properties.value;
+
+  const onValueChange = (v) => {
+    this.properties.value = v;
+    updateJSONPreview();
+  };
+
+  if (vt === "number") {
+    // Use "number" widget if available; fallback to "text" if not.
+    valueWidget = this.addWidget("number", "Value", Number(currentValue) || 0, onValueChange);
+  } else if (vt === "date") {
+    // HTML5 date via LiteGraph "text" (most consistent).
+    // If you have a "date" widget in your LiteGraph build, you can switch it.
+    // We'll keep "text" to avoid dependency.
+    // Expected format: YYYY-MM-DD
+    valueWidget = this.addWidget("text", "Value (YYYY-MM-DD)", currentValue || "2026-01-01", onValueChange);
+  } else if (vt === "dropdown") {
+    const opts = def.options || [];
+    // Ensure current value is valid
+    if (!opts.includes(this.properties.value)) {
+      this.properties.value = opts[0] ?? "";
+    }
+    valueWidget = this.addWidget("combo", "Value", this.properties.value, onValueChange, { values: opts });
+  } else {
+    // text
+    valueWidget = this.addWidget("text", "Value", currentValue ?? "", onValueChange);
+  }
+
+  // Re-attach reference for future updates
+  this._wValue = valueWidget;
+
+  // Force redraw
+  this.setDirtyCanvas(true, true);
+};
+
+TransactionRuleNode.prototype.onExecute = function() {
+  this.setOutputData(0, {
+    field: this.properties.field,
+    operator: this.properties.operator,
+    value: this.properties.value
+  });
+};
+
+LiteGraph.registerNodeType("rules/TransactionRule", TransactionRuleNode);
+
+
+
+    /** Rule Node: e.g. field='amount' op='>' value=1000 */
+    function RuleNode() {
+      this.addOutput("rule", "rule");
+    //   this.addProperty("field", "amount");
+    //   this.addProperty("operator", ">");
+    //   this.addProperty("value", 1000);
+
+
+     // Predefined selectable fields
+     const RULE_FIELDS = [
+      "amount",
+      "country",
+      "currency",
+      "merchant",
+      "status",
+      "channel"
+    ];
+
+       // Predefined selectable fields
+     const CATEGORY_FIELDS = [
+      "history",
+      "transaction",
+      "profile",
+      "constant",      
+    ];
+
+    this.properties = {
+        field: "amount",
+        operator: ">",
+        value: "1000"
+      };
+
+   
+
+     // category combo widget
+     this.fieldWidget = this.addWidget(
+        "combo",
+        "Category",
+        this.properties.field,
+        (v) => {
+          this.properties.field = v;
+          this.setDirtyCanvas(true, true);
+        },
+        { values: CATEGORY_FIELDS }
+      );
+
+      // Field combo widget
+      this.fieldWidget = this.addWidget(
+        "combo",
+        "Field",
+        this.properties.field,
+        (v) => {
+          this.properties.field = v;
+          this.setDirtyCanvas(true, true);
+          updateJSONPreview();
+        },
+        { values: RULE_FIELDS }
+      );
+
+      this.addWidget("combo", "Operator", this.properties.operator, (v) => {
+        this.properties.operator = v;
+        this.setDirtyCanvas(true, true);
+        updateJSONPreview();
+      }, {
+        values: [">", "<", "=", "!=", "CONTAINS", "STARTS_WITH", "ENDS_WITH"]
+      });
+
+      this.addWidget("text", "Value", this.properties.value, (v) => {
+        this.properties.value = v;
+        this.setDirtyCanvas(true, true);
+        updateJSONPreview();
+      });
+
+    }
+
+    RuleNode.title = "Transaction Rule";
+    RuleNode.desc = "Define a rule (field, operator, value)";
+
+    RuleNode.prototype.onExecute = function() {
+      const rule = {
+        field: this.properties.field,
+        operator: this.properties.operator,
+        value: this.properties.value        
+      };
+      this.setOutputData(0, rule);
+    };
+
+    RuleNode.prototype.onPropertyChanged = function(name, value) {
+      this.properties[name] = value;
+    };
+
+    LiteGraph.registerNodeType("rules/TransactionRule2", RuleNode);
+
+    /** Rule Group: nested group with multiple inputs and configurable logic */
+    function RuleGroupNode() {
+      this.addOutput("group", "rule");
+      this.properties = {
+        logicType: "AND",
+        inputCount: 2
+      };
+
+      this.addWidget("combo", "Logic", this.properties.logicType, (v) => {
+        this.properties.logicType = v;
+        updateJSONPreview();
+      }, { values: ["AND", "OR"] });
+
+      this.addWidget("number", "Inputs", this.properties.inputCount, (v) => {
+        v = Math.max(2, Math.min(8, Math.round(Number(v))));
+        this.properties.inputCount = v;
+        this._rebuildInputs();
+        updateJSONPreview();
+      }, { min: 2, max: 8, step: 1 });
+
+      this._rebuildInputs();
+    }
+
+    RuleGroupNode.title = "Rule Group";
+    RuleGroupNode.desc = "Group multiple rules with AND/OR (2-8 inputs)";
+    RuleGroupNode.color = "#1a3a5c";
+    RuleGroupNode.bgcolor = "#0e2a44";
+
+    RuleGroupNode.prototype._rebuildInputs = function() {
+      if (!this.inputs) this.inputs = [];
+      while (this.inputs.length > 0) this.removeInput(0);
+      const count = this.properties.inputCount;
+      for (let i = 0; i < count; i++) {
+        this.addInput(String.fromCharCode(65 + i), "rule");
+      }
+      this.size = this.computeSize();
+      this.setDirtyCanvas(true, true);
+    };
+
+    RuleGroupNode.prototype.onExecute = function() {
+      const result = {
+        type: this.properties.logicType.toUpperCase(),
+        rules: []
+      };
+      for (let i = 0; i < this.inputs.length; i++) {
+        const data = this.getInputData(i);
+        if (data) result.rules.push(data);
+      }
+      this.setOutputData(0, result);
+    };
+
+    LiteGraph.registerNodeType("rules/RuleGroup", RuleGroupNode);
+
+    /** Logic Node: combines multiple rule objects */
+    function LogicNode() {
+      this.addInput("A", "rule");
+      this.addInput("B", "rule");
+      this.addOutput("logic", "rule");
+      this.addProperty("logicType", "AND", "string"); // or OR
+    }
+
+    LogicNode.title = "Logic Combiner";
+    LogicNode.desc = "Combine rules with AND or OR";
+
+    LogicNode.prototype.onExecute = function() {
+      const a = this.getInputData(0);
+      const b = this.getInputData(1);          
+      const result = {
+        type: this.properties.logicType.toUpperCase(),
+        rules: []
+      };
+      if (a) result.rules.push(a);
+      if (b) result.rules.push(b);
+      this.setOutputData(0, result);
+    };
+
+    LiteGraph.registerNodeType("rules/LogicCombiner", LogicNode);
+
+    /** Export Node: final output of all rules combined */
+    function ExportNode() {
+      this.addInput("input", "rule");
+      this.addOutput("json", "string");
+    }
+
+    ExportNode.title = "Export Rules JSON";
+    ExportNode.desc = "Outputs JSON representation of all rules";
+
+    ExportNode.prototype.onExecute = function() {
+      const input = this.getInputData(0);
+      this.size = [220, 50];
+    //   const jsonResult = JSON.stringify(input, null, 2);
+      const jsonResult = input ? JSON.stringify(input, null, 2) : "{}";
+      this.setOutputData(0, jsonResult);
+      document.getElementById("json-output").textContent = jsonResult;
+      lastPreviewJSON = jsonResult;
+    //   console.log(jsonResult)
+    };
+
+    LiteGraph.registerNodeType("rules/ExportJSON", ExportNode);
+
+    // --- Create graph & add sample nodes ---
+    const graph = new LiteGraph.LGraph();
+    const canvas = new LiteGraph.LGraphCanvas("#graph", graph);
+
+    function resizeCanvas() {
+      const c = document.getElementById("graph");
+      c.width = window.innerWidth;
+      c.height = window.innerHeight;
+      graph.setDirtyCanvas(true, true);
+    }
+    window.addEventListener("resize", resizeCanvas);
+    resizeCanvas();
+
+    const rule1 = LiteGraph.createNode("rules/TransactionRule");
+    rule1.pos = [100, 100];
+    rule1.properties.field = "amount";
+    rule1.properties.operator = ">";
+    rule1.properties.value = 500;
+
+    const rule2 = LiteGraph.createNode("rules/TransactionRule");
+    rule2.pos = [100, 250];
+    rule2.properties.field = "country";
+    rule2.properties.operator = "CONTAINS";
+    rule2.properties.value = "US";
+
+    const logic = LiteGraph.createNode("rules/LogicCombiner");
+    logic.properties.logicType = "AND";
+    logic.pos = [400, 180];
+
+    const exporter = LiteGraph.createNode("rules/ExportJSON");
+    exporter.pos = [700, 180];
+
+    // graph.add(rule1);
+    // graph.add(rule2);
+    // graph.add(logic);
+    // graph.add(exporter);
+
+    // Connect nodes
+    // rule1.connect(0, logic, 0);
+    // rule2.connect(0, logic, 1);
+    // logic.connect(0, exporter, 0);
+
+    graph.start();
+
+
+/* ================================
+   Enhanced Group Visuals (canvas)
+=============================== */
+const _origGroupDraw = LiteGraph.LGraphGroup.prototype.draw;
+LiteGraph.LGraphGroup.prototype.draw = function(ctx) {
+  const x = this.pos[0], y = this.pos[1], w = this.size[0], h = this.size[1];
+  const r = 10;
+  ctx.save();
+
+  // Shadow
+  ctx.shadowColor = "rgba(0,0,0,0.35)";
+  ctx.shadowBlur = 16;
+  ctx.shadowOffsetY = 4;
+
+  // Rounded rect path
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+
+  // Fill
+  ctx.fillStyle = this.color || "rgba(46, 79, 151, 0.35)";
+  ctx.fill();
+
+  // Border
+  ctx.shadowColor = "transparent";
+  ctx.strokeStyle = this._collapsed
+    ? "rgba(255, 200, 100, 0.5)"
+    : "rgba(116, 185, 255, 0.45)";
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  ctx.restore();
+
+  // Title background bar
+  ctx.fillStyle = this._collapsed
+    ? "rgba(60, 40, 20, 0.7)"
+    : "rgba(30, 55, 110, 0.75)";
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + 24);
+  ctx.lineTo(x, y + 24);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+  ctx.fill();
+
+  // Title text
+  ctx.fillStyle = "#fff";
+  ctx.font = "600 12px Poppins, sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(this.title || "Group", x + w / 2, y + 13);
+};
+
+
+/* ================================
+   Collapsible Node Groups
+=============================== */
+let activeGroup = null;
+
+function getSelectedGroup() {
+  const selected = canvas.selected_nodes;
+  if (selected) {
+    const selNodes = Object.values(selected);
+    for (const g of graph._groups || []) {
+      if (g._childNodes && selNodes.some(n => g._childNodes.includes(n))) return g;
+    }
+  }
+  if (activeGroup && graph._groups && graph._groups.includes(activeGroup)) {
+    return activeGroup;
+  }
+  return null;
+}
+
+function groupSelectedNodes() {
+  const selected = canvas.selected_nodes;
+  if (!selected || Object.keys(selected).length === 0) return;
+  const nodes = Object.values(selected);
+
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  nodes.forEach(n => {
+    const [x, y] = n.pos;
+    const [w, h] = n.size || [100, 60];
+    if (x < minX) minX = x;
+    if (y < minY) minY = y;
+    if (x + w > maxX) maxX = x + w;
+    if (y + h > maxY) maxY = y + h;
+  });
+
+  const pad = 30;
+  const group = new LiteGraph.LGraphGroup();
+  group.title = "▼ Group";
+  group.pos = [minX - pad, minY - pad - 14];
+  group.size = [maxX - minX + pad * 2, maxY - minY + pad * 2 + 14];
+  group._childNodes = nodes;
+  group._collapsed = false;
+  group._originalSize = [...group.size];
+  group.color = "rgba(46, 79, 151, 0.30)";
+  graph.add(group);
+  nodes.forEach(n => n._group = group);
+  activeGroup = group;
+  graph.setDirtyCanvas(true, true);
+}
+
+function ungroupSelected() {
+  const group = getSelectedGroup();
+  if (!group) return;
+  if (group._hiddenNodes) {
+    group._hiddenNodes.forEach(n => graph._nodes.push(n));
+    group._hiddenNodes = null;
+  }
+  if (group._childNodes) {
+    group._childNodes.forEach(n => {
+      n._group = null;
+      n._visible = true;
+    });
+  }
+  if (activeGroup === group) activeGroup = null;
+  graph.remove(group);
+  graph.setDirtyCanvas(true, true);
+}
+
+function toggleCollapseGroup() {
+  const group = getSelectedGroup();
+  if (!group || !group._childNodes) return;
+  group._collapsed = !group._collapsed;
+  if (group._collapsed) {
+    group._originalSize = [...group.size];
+    group.size = [group.size[0], 36];
+    group._hiddenNodes = [];
+    group._childNodes.forEach(n => {
+      const idx = graph._nodes.indexOf(n);
+      if (idx !== -1) {
+        graph._nodes.splice(idx, 1);
+        group._hiddenNodes.push(n);
+      }
+    });
+    group.title = "▶ Group (" + group._childNodes.length + " nodes)";
+  } else {
+    group.size = group._originalSize || [240, 120];
+    if (group._hiddenNodes) {
+      group._hiddenNodes.forEach(n => graph._nodes.push(n));
+      group._hiddenNodes = null;
+    }
+    group.title = "▼ Group";
+  }
+  graph.setDirtyCanvas(true, true);
+}
+
+// Detect clicks on group title bars to set active group
+canvas.canvas.addEventListener("mousedown", (e) => {
+  const coords = canvas.convertEventToCanvasOffset(e);
+  for (const g of graph._groups || []) {
+    const [gx, gy] = g.pos;
+    const [gw] = g.size;
+    if (coords[0] >= gx && coords[0] <= gx + gw &&
+        coords[1] >= gy && coords[1] <= gy + 22) {
+      activeGroup = g;
+      break;
+    }
+  }
+});
+
+document.getElementById("btnGroup").addEventListener("click", groupSelectedNodes);
+document.getElementById("btnUngroup").addEventListener("click", ungroupSelected);
+document.getElementById("btnCollapse").addEventListener("click", toggleCollapseGroup);
+
+
+/* ================================
+   Search / Filter Nodes in Sidebar
+=============================== */
+document.getElementById("searchNodes").addEventListener("input", (e) => {
+  const q = e.target.value.toLowerCase();
+  document.querySelectorAll("#node-list .node-item").forEach(el => {
+    el.style.display = el.textContent.toLowerCase().includes(q) ? "block" : "none";
+  });
+});
+
+/* ================================
+   Drag & Drop From Sidebar
+=============================== */
+const nodeItems = document.querySelectorAll(".node-item");
+
+    nodeItems.forEach(item => {
+
+    item.addEventListener("dragstart", (event) => {
+        event.dataTransfer.setData("node-type", item.dataset.type);
+    });
+
+    });
+
+
+    const graphContainer = document.getElementById("graph-container");
+
+    graphContainer.addEventListener("dragover", (event) => {
+    event.preventDefault();
+    });
+
+    graphContainer.addEventListener("drop", (event) => {
+    event.preventDefault();
+
+    const nodeType = event.dataTransfer.getData("node-type");
+    if (!nodeType) return;
+
+    const node = LiteGraph.createNode(nodeType);
+    if (!node) return;
+
+    // Calculate drop position relative to canvas
+    const rect = graphContainer.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+
+    node.pos = canvas.convertEventToCanvasOffset(event);
+
+    graph.add(node);
+
+    updateJSONPreview();
+    });
+
+    /* =====================================
+    LIVE JSON GENERATOR
+    ===================================== */
+    function updateJSONPreview() {
+        graph.runStep(1);
+    // Find export node
+    //     const exportNode = graph._nodes.find(n => n.type === "rules/ExportJSON");
+    //         console.log(exportNode.outputs[0]._data)
+    //     if (!exportNode) {
+    //       document.getElementById("json-output").textContent = "{}";
+    //     return;
+    //     } else {
+    //         document.getElementById("json-output").textContent = exportNode.outputs[0]._data    ;
+    //     }
+
+    // // Manually execute graph once to propagate values
+    //     graph.runStep(1);
+    }
+
+    /* Run preview when user edits/changes connections */
+    graph.onAfterChange = function() {
+         updateJSONPreview();
+    };
+
+/* =========================================================
+   Copy JSON button
+   ========================================================= */
+
+    document.getElementById("btnCopy").addEventListener("click", async () => {
+    try {
+        await navigator.clipboard.writeText(lastPreviewJSON || "{}");
+        const btn = document.getElementById("btnCopy");
+        const old = btn.textContent;
+        btn.textContent = "Copied!";
+        setTimeout(()=> btn.textContent = old, 900);
+    } catch (e) {
+        // fallback
+        const ta = document.createElement("textarea");
+        ta.value = lastPreviewJSON || "{}";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+    }
+    });
+
+    document.getElementById("btnClear").addEventListener("click", () => {
+        lastPreviewJSON = "{}";
+        document.getElementById("json-output").textContent = "{}";
+    });
+
+/* =========================================================
+   LLM Chat Assistant
+   ========================================================= */
+const DEFAULT_SYSTEM = `You are a transaction rule builder assistant. Convert natural language into structured JSON to create nodes in a LiteGraph workflow.
+
+Available node types:
+- "rules/TransactionRule" — a single condition. Properties: { field (string), operator (string), value (string) }. Fields: amount, country, currency, merchant, status, channel, transactionDate. Operators numeric: >, <, =, !=. Operators text: =, !=, CONTAINS. Operators date: >, <, =, !=.
+- "rules/LogicCombiner" — combine 2 rules. Properties: { logicType: "AND" or "OR" }. Inputs: A and B.
+- "rules/RuleGroup" — group 2-8 rules. Properties: { logicType: "AND" or "OR", inputCount: number }.
+- "rules/ExportJSON" — final output, no properties, one input.
+
+Respond ONLY with valid JSON — no markdown, no explanation. Format:
+{
+  "nodes": [
+    { "type": "rules/TransactionRule", "properties": { "field": "amount", "operator": ">", "value": "10000" }, "pos": [100, 100] }
+  ],
+  "connections": [
+    { "from": 0, "fromSlot": 0, "to": 1, "toSlot": 0 }
+  ]
+}
+Node indices in connections match the order of the nodes array. Position nodes in a readable left-to-right layout.`;
+
+let chatOpen = false;
+let llmBusy = false;
+
+function loadLLMConfig() {
+  try {
+    const saved = JSON.parse(localStorage.getItem("llm_config"));
+    if (saved) {
+      document.getElementById("cfg-endpoint").value = saved.endpoint || "http://192.168.167.70:11434";
+      document.getElementById("cfg-model").value = saved.model || "qwen3.5:35b";
+      document.getElementById("cfg-apikey").value = saved.apiKey || "";
+      document.getElementById("cfg-system").value = saved.systemPrompt || DEFAULT_SYSTEM;
+      return saved;
+    }
+  } catch (_) {}
+  return { endpoint: "http://192.168.167.70:11434", model: "qwen3.5:35b", apiKey: "", systemPrompt: DEFAULT_SYSTEM };
+}
+
+function saveLLMConfig() {
+  const cfg = {
+    endpoint: document.getElementById("cfg-endpoint").value.trim(),
+    model: document.getElementById("cfg-model").value.trim(),
+    apiKey: document.getElementById("cfg-apikey").value.trim(),
+    systemPrompt: document.getElementById("cfg-system").value.trim()
+  };
+  localStorage.setItem("llm_config", JSON.stringify(cfg));
+  return cfg;
+}
+
+// Init system prompt field with default (wait for DOM)
+document.addEventListener("DOMContentLoaded", () => {
+  const savedCfg = loadLLMConfig();
+  const sysEl = document.getElementById("cfg-system");
+  if (sysEl) sysEl.value = savedCfg.systemPrompt || DEFAULT_SYSTEM;
+});
+
+function addMessage(text, role, extraClass) {
+  const el = document.createElement("div");
+  el.className = "msg " + role + (extraClass ? " " + extraClass : "");
+  el.textContent = text;
+  document.getElementById("chat-messages").appendChild(el);
+  el.scrollIntoView({ behavior: "smooth" });
+}
+
+function setBusy(busy) {
+  llmBusy = busy;
+  const btn = document.getElementById("chat-send");
+  btn.disabled = busy;
+  btn.textContent = busy ? "..." : "➤";
+}
+
+async function sendToLLM(userText) {
+  const cfg = loadLLMConfig();
+  const endpoint = cfg.endpoint.replace(/\/+$/, "");
+  const model = cfg.model;
+  const apiKey = cfg.apiKey;
+  const systemPrompt = document.getElementById("cfg-system").value.trim() || DEFAULT_SYSTEM;
+
+  const headers = { "Content-Type": "application/json" };
+  if (apiKey) headers["Authorization"] = "Bearer " + apiKey;
+
+  try {
+    // const resp = await fetch(endpoint + "/api/chat", {
+      const resp = await fetch(endpoint , {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        model,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userText }
+        ],
+        stream: false
+      })
+    });
+    if (!resp.ok) throw new Error("HTTP " + resp.status);
+    const data = await resp.json();
+    console.log(data.choices[0].message?.content )
+    return data.choices[0].message?.content || "";
+  } catch (e) {
+    throw new Error("LLM request failed: " + e.message);
+  }
+}
+
+function parseAndBuildNodes(raw) {
+  // Extract JSON from response (handle markdown fences)
+  let json = raw.trim();
+  const fenceMatch = json.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (fenceMatch) json = fenceMatch[1].trim();
+
+  const spec = JSON.parse(json);
+  if (!spec.nodes || !Array.isArray(spec.nodes)) throw new Error("No nodes array in response");
+
+  // Clear graph
+  while (graph._nodes.length > 0) graph.remove(graph._nodes[0]);
+  // Remove all groups
+  while (graph._groups && graph._groups.length > 0) graph.remove(graph._groups[0]);
+
+  const created = [];
+  for (const ndef of spec.nodes) {
+    const node = LiteGraph.createNode(ndef.type);
+    if (!node) throw new Error("Unknown node type: " + ndef.type);
+    if (ndef.properties) Object.assign(node.properties, ndef.properties);
+    if (ndef.pos) node.pos = [ndef.pos[0], ndef.pos[1]];
+    graph.add(node);
+    created.push(node);
+  }
+
+  if (spec.connections) {
+    for (const conn of spec.connections) {
+      const fromNode = created[conn.from];
+      const toNode = created[conn.to];
+      if (fromNode && toNode) {
+        fromNode.connect(conn.fromSlot, toNode, conn.toSlot);
+      }
+    }
+  }
+
+  graph.setDirtyCanvas(true, true);
+  updateJSONPreview();
+  return created.length;
+}
+
+async function handleSend() {
+  const input = document.getElementById("chat-input");
+  const text = input.value.trim();
+  if (!text || llmBusy) return;
+
+  input.value = "";
+  addMessage(text, "user");
+  addMessage("Thinking...", "bot", "status");
+  setBusy(true);
+
+  try {
+    const reply = await sendToLLM(text);
+    // Remove "Thinking..." status message
+    const msgs = document.getElementById("chat-messages");
+    const statusEl = msgs.querySelector(".msg-status:last-child");
+    if (statusEl) statusEl.remove();
+
+    const nodeCount = parseAndBuildNodes(reply);
+    addMessage("✅ Created " + nodeCount + " node" + (nodeCount > 1 ? "s" : "") + " in the graph.", "bot", "success");
+  } catch (e) {
+    const msgs = document.getElementById("chat-messages");
+    const statusEl = msgs.querySelector(".msg-status:last-child");
+    if (statusEl) statusEl.remove();
+    addMessage("❌ " + e.message, "bot", "error");
+  }
+  setBusy(false);
+}
+
+// --- Chat UI events (deferred to DOMContentLoaded) ---
+document.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("chat-toggle").addEventListener("click", () => {
+    chatOpen = !chatOpen;
+    document.getElementById("chat-panel").classList.toggle("open", chatOpen);
+  });
+  document.getElementById("chat-close-btn").addEventListener("click", () => {
+    chatOpen = false;
+    document.getElementById("chat-panel").classList.remove("open");
+  });
+  document.getElementById("chat-send").addEventListener("click", handleSend);
+  document.getElementById("chat-input").addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); }
+  });
+  document.getElementById("chat-settings-btn").addEventListener("click", () => {
+    loadLLMConfig();
+    document.getElementById("modal-overlay").classList.add("open");
+  });
+  document.getElementById("modal-cancel").addEventListener("click", () => {
+    document.getElementById("modal-overlay").classList.remove("open");
+  });
+  document.getElementById("modal-save").addEventListener("click", () => {
+    saveLLMConfig();
+    document.getElementById("modal-overlay").classList.remove("open");
+  });
+  document.getElementById("modal-overlay").addEventListener("click", (e) => {
+    if (e.target === e.currentTarget) document.getElementById("modal-overlay").classList.remove("open");
+  });
+});
+
+   </script>
+  <!-- ===== Floating Chat ===== -->
+  <button id="chat-toggle" title="LLM Assistant">🤖</button>
+
+  <div id="chat-panel">
+    <div id="chat-header">
+      <h3>🤖 LLM Assistant</h3>
+      <div>
+        <button id="chat-settings-btn" title="Settings">⚙</button>
+        <button id="chat-close-btn" title="Close">✕</button>
+      </div>
+    </div>
+    <div id="chat-messages">
+      <div class="msg bot">Hi! Describe the rules you need and I'll build them in the graph.</div>
+    </div>
+    <div id="chat-input-row">
+      <textarea id="chat-input" rows="2" placeholder="e.g. Create a rule to reject transactions over $10k from US..."></textarea>
+      <button id="chat-send">➤</button>
+    </div>
+  </div>
+
+  <!-- ===== Settings Modal ===== -->
+  <div id="modal-overlay">
+    <div id="modal-box">
+      <h3>⚙ LLM Settings</h3>
+      <label>Ollama Endpoint</label>
+      <input id="cfg-endpoint" value="http://192.168.167.70:11434" placeholder="http://192.168.167.70:11434">
+      <label>Model</label>
+      <input id="cfg-model" value="qwen3.5:35b" placeholder="qwen3.5:35b">
+      <label>API Key <span style="color:rgba(255,255,255,0.3);font-size:11px;">(optional)</span></label>
+      <input id="cfg-apikey" type="password" placeholder="sk-... or leave blank for open-source LLMs">
+      <label>System Prompt</label>
+      <textarea id="cfg-system" rows="4" placeholder="Instructions for the LLM..."></textarea>
+      <div class="modal-btns">
+        <button id="modal-cancel" class="btn-secondary">Cancel</button>
+        <button id="modal-save" type="button">Save</button>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
