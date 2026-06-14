@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&family=Vazirmatn:wght@400;500;600;700&family=Lalezar&family=Markazi+Text:wght@400;500;600;700&family=Readex+Pro:wght@400;500;600;700&display=swap" rel="stylesheet"> 
   <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gojs@3.0.13/release/go.js"></script>
   <title>Command Palette</title>
   <style>
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
@@ -2178,6 +2179,114 @@
       border: 1px solid rgba(255,69,58,0.2);
     }
 
+    .gojs-container {
+      width: 100%;
+      height: 100%;
+      min-height: 120px;
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+    }
+    .gojs-container canvas {
+      outline: none;
+    }
+    .gojs-note-wrap {
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
+    .gojs-restyle-btn {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      width: 24px;
+      height: 24px;
+      border: none;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.85);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      color: #555;
+      font-size: 13px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.15s, transform 0.15s;
+      z-index: 10;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+      line-height: 1;
+    }
+    .gojs-note-wrap:hover .gojs-restyle-btn {
+      opacity: 1;
+    }
+    .gojs-restyle-btn:hover {
+      transform: scale(1.15);
+      background: rgba(255,255,255,0.95);
+    }
+    .gojs-source {
+      width: 100%;
+      height: 100%;
+      min-height: 100px;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 11px;
+      line-height: 1.5;
+      padding: 6px;
+      border: none;
+      background: rgba(0,0,0,0.03);
+      border-radius: 4px;
+      color: var(--text);
+      resize: none;
+      outline: none;
+    }
+    .gojs-source:focus {
+      background: rgba(0,0,0,0.06);
+    }
+    .note-graph-text {
+      overflow: hidden;
+    }
+
+    .graph-template-popup {
+      position: fixed;
+      z-index: 10000;
+      background: var(--surface);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 0.5px solid var(--surface-border);
+      border-radius: 12px;
+      padding: 8px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 140px;
+      opacity: 0;
+      transform: translateY(4px) scale(0.96);
+      pointer-events: none;
+      transition: opacity 0.12s, transform 0.12s;
+    }
+    .graph-template-popup.visible {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      pointer-events: auto;
+    }
+    .graph-template-item {
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      cursor: pointer;
+      color: var(--text);
+      transition: background 0.1s;
+      white-space: nowrap;
+    }
+    .graph-template-item:hover {
+      background: rgba(0,0,0,0.06);
+    }
+    .dark-theme .graph-template-item:hover {
+      background: rgba(255,255,255,0.08);
+    }
+
     .note-edit-btn {
       position: absolute;
       top: 6px;
@@ -3631,6 +3740,7 @@
       <div class="notes-sidebar-actions" id="sidebarActions">
         <button type="button" class="notes-sidebar-add simple" id="notesSidebarAddSimple" title="New simple note" aria-label="New simple note">+</button>
         <button type="button" class="notes-sidebar-add markdown" id="notesSidebarAddMarkdown" title="New markdown note" aria-label="New markdown note">Md</button>
+        <button type="button" class="notes-sidebar-add graph" id="notesSidebarAddGraph" title="New graph note" aria-label="New graph note">Gr</button>
         <button type="button" class="notes-sidebar-close" id="notesSidebarClose" aria-label="Close notes">✕</button>
       </div>
     </div>
@@ -3640,6 +3750,12 @@
       <div class="color-palette-grid" id="colorPaletteGrid"></div>
     </div>
   </div>
+</div>
+<div class="graph-template-popup" id="graphTemplatePopup">
+  <div class="graph-template-item" data-graph-template="blank">Blank</div>
+  <div class="graph-template-item" data-graph-template="flowchart">Flowchart</div>
+  <div class="graph-template-item" data-graph-template="orgchart">Org Chart</div>
+  <div class="graph-template-item" data-graph-template="mindmap">Mind Map</div>
 </div>
 
 <div class="overlay" id="overlay"></div>
@@ -3798,6 +3914,10 @@
     { id: 'new-simple-note',   title: 'Simple Note',   subtitle: 'Create a plain text sticky note',      icon: 'T', color: '#ffcc00', shortcut: [], action: () => createSimpleNote(input.value.trim() || null) },
     { id: 'new-markdown-note', title: 'Markdown Note', subtitle: 'Create a note with markdown formatting', icon: 'M', color: '#bf5af2', shortcut: [], action: () => createMarkdownNote(input.value.trim() || null) },
     { id: 'new-image-note',   title: 'Image Note',    subtitle: 'Pick an image file to create an image note', icon: '\uD83D\uDCF7', color: '#ff9500', shortcut: [], action: () => { const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*'; inp.onchange = () => { const f = inp.files[0]; if (f) { const r = new FileReader(); r.onload = e => createImageNote(e.target.result); r.readAsDataURL(f); } }; inp.click(); } },
+    { id: 'graph-blank',      title: 'Graph: Blank',  subtitle: 'Empty graph with one node',         icon: '\u25A1', color: '#30d158', shortcut: [], action: () => createGraphNote(null, { templateName: 'blank' }) },
+    { id: 'graph-flowchart',  title: 'Graph: Flowchart', subtitle: 'Start \u2192 Process \u2192 Decision \u2192 End', icon: '\u2194', color: '#30d158', shortcut: [], action: () => createGraphNote(null, { templateName: 'flowchart' }) },
+    { id: 'graph-orgchart',   title: 'Graph: Org Chart', subtitle: 'CEO \u2192 VPs \u2192 Managers',           icon: '\u2B1D', color: '#30d158', shortcut: [], action: () => createGraphNote(null, { templateName: 'orgchart' }) },
+    { id: 'graph-mindmap',    title: 'Graph: Mind Map', subtitle: 'Central idea with branches',        icon: '\u2606', color: '#30d158', shortcut: [], action: () => createGraphNote(null, { templateName: 'mindmap' }) },
     { id: 'view-notes',  title: 'View Notes',         subtitle: 'Show all sticky notes',          icon: '\uD83D\uDCCC', color: '#5ac8fa', shortcut: [], action: () => openSidebar('notes') },
     { id: 'clear-notes', title: 'Clear All Notes',    subtitle: 'Remove all sticky notes',        icon: '\u267B', color: '#ff3b30', shortcut: [], action: clearAllNotes },
     { id: 'new-canvas',  title: 'New Canvas',          subtitle: 'Create a new canvas',            icon: '+', color: '#5ac8fa', shortcut: [], action: () => addCanvas(prompt('Canvas name:', 'Canvas ' + (canvases.length + 1)) || '') },
@@ -3831,6 +3951,13 @@ def greet(name):
 }
 \`\`\`
 `;
+
+  const GRAPH_TEMPLATES = {
+    blank: { label: 'Blank', nodes: [{ key: 1, text: 'Node 1' }], links: [] },
+    flowchart: { label: 'Flowchart', nodes: [{ key: 'start', text: 'Start' }, { key: 'proc', text: 'Process' }, { key: 'dec', text: 'Decision?' }, { key: 'end', text: 'End' }], links: [{ from: 'start', to: 'proc' }, { from: 'proc', to: 'dec' }, { from: 'dec', to: 'end' }] },
+    orgchart: { label: 'Org Chart', nodes: [{ key: 'ceo', text: 'CEO' }, { key: 'vp1', text: 'VP Eng' }, { key: 'vp2', text: 'VP Mktg' }, { key: 'm1', text: 'Eng Mgr' }, { key: 'm2', text: 'Mktg Mgr' }], links: [{ from: 'ceo', to: 'vp1' }, { from: 'ceo', to: 'vp2' }, { from: 'vp1', to: 'm1' }, { from: 'vp2', to: 'm2' }] },
+    mindmap: { label: 'Mind Map', nodes: [{ key: 'c', text: 'Main Idea' }, { key: 'b1', text: 'Branch 1' }, { key: 'b2', text: 'Branch 2' }, { key: 'b3', text: 'Branch 3' }, { key: 'b4', text: 'Branch 4' }], links: [{ from: 'c', to: 'b1' }, { from: 'c', to: 'b2' }, { from: 'c', to: 'b3' }, { from: 'c', to: 'b4' }] },
+  };
 
   let LLM_ENDPOINT = localStorage.getItem('llm_endpoint') || 'http://192.168.167.70:11434/api/chat';
   let LLM_MODEL = localStorage.getItem('llm_model') || 'qwen3.5:35b';
@@ -4934,6 +5061,14 @@ def greet(name):
       const caption = (note.text || '').trim();
       return caption ? '\uD83D\uDCF7 ' + caption : '\uD83D\uDCF7 Image';
     }
+    if (note.format === 'graph') {
+      try {
+        const d = JSON.parse(note.text || '{}');
+        const n = (d.nodeDataArray || []).length;
+        const l = (d.linkDataArray || []).length;
+        return '\uD83D\uDD17 Graph (' + n + ' node' + (n !== 1 ? 's' : '') + ', ' + l + ' link' + (l !== 1 ? 's' : '') + ')';
+      } catch { return '\uD83D\uDD17 Graph'; }
+    }
     const raw = (note.text || '').trim();
     if (!raw) return 'Empty note';
     if (note.format === 'markdown') return stripMarkdownForPreview(raw);
@@ -5030,6 +5165,9 @@ def greet(name):
     if (note.format === 'mermaid') {
       const escaped = escapeHtml(note.text);
       return `<div class="mermaid-note-wrap"><div class="mermaid" data-mermaid-src="${escaped}">${escaped}</div><!--<button class="mermaid-toggle-btn" data-toggle-mermaid="${note.id}">\u270F\uFE0F</button>--></div>`;
+    }
+    if (note.format === 'graph') {
+      return `<div class="gojs-note-wrap"><div class="gojs-container" data-diagram-id="${note.id}"></div><button class="gojs-restyle-btn" data-restyle-id="${note.id}" title="Restyle diagram">\uD83C\uDFA8</button></div>`;
     }
     let text = note.text || '';
     if (note.apiId && apiDataCache[note.apiId]) {
@@ -5164,6 +5302,8 @@ def greet(name):
   }
 
   function deleteNote(id) {
+    const diag = gojsDiagrams.get(id);
+    if (diag) { diag.div = null; gojsDiagrams.delete(id); }
     const el = document.querySelector(`.draggable-note[data-id="${id}"]`);
     if (el) el.remove();
     const idx = notes.findIndex(n => n.id === id);
@@ -5194,6 +5334,55 @@ def greet(name):
     renderStickyNotes();
     renderSidebar();
     showToast(`\uD83D\uDCE5 Note restored`);
+  }
+
+  function showGraphTemplatePopup() {
+    const popup = document.getElementById('graphTemplatePopup');
+    if (!popup) return;
+    if (popup.classList.contains('visible')) { popup.classList.remove('visible'); return; }
+    const btn = document.getElementById('notesSidebarAddGraph');
+    if (btn) {
+      const rect = btn.getBoundingClientRect();
+      popup.style.left = Math.max(8, rect.left + rect.width / 2 - 70) + 'px';
+      popup.style.top = (rect.bottom + 4) + 'px';
+      popup.style.transform = '';
+    }
+    popup.classList.add('visible');
+  }
+
+  function createGraphNote(text, { templateName = 'blank' } = {}) {
+    let noteText = '';
+    const tmpl = GRAPH_TEMPLATES[templateName] || GRAPH_TEMPLATES.blank;
+    noteText = JSON.stringify({ nodeDataArray: tmpl.nodes, linkDataArray: tmpl.links });
+    const note = {
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+      text: noteText,
+      format: 'graph',
+      z: getNextNoteZ(),
+      color: getRandomColor(),
+      tags: [],
+      dir: 'ltr',
+      apiId: null,
+      created: Date.now(),
+      visible: true,
+      archived: false,
+      pinned: false,
+      x: 60 + Math.random() * 200,
+      y: 100 + Math.random() * 300,
+      w: 320,
+      h: 260,
+    };
+    notes.unshift(note);
+    if (notes.filter(n => !n.archived).length > 50) {
+      const last = notes.filter(n => !n.archived && !n.pinned).pop();
+      if (last) archiveNote(last.id, true);
+    }
+    saveCanvasData();
+    renderStickyNotes();
+    renderSidebar();
+    const popup = document.getElementById('graphTemplatePopup');
+    if (popup) popup.classList.remove('visible');
+    showToast(`\uD83D\uDD17 Graph note created (${tmpl.label})`);
   }
 
   function duplicateNote(id) {
@@ -5345,6 +5534,162 @@ def greet(name):
     renderMermaidInElement(document);
   }
 
+  const gojsDiagrams = new Map();
+
+  function makeGojsNodeTemplate() {
+    if (typeof go === 'undefined') return null;
+    const $ = go.GraphObject.make;
+    function addChildNode(e, obj) {
+      const node = obj.part;
+      if (!(node instanceof go.Node)) return;
+      const diagram = node.diagram;
+      if (!diagram) return;
+      diagram.startTransaction('add child');
+      const newKey = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+      const newNode = { key: newKey, text: 'New Node' };
+      diagram.model.addNodeData(newNode);
+      diagram.model.addLinkData({ from: node.data.key, to: newKey });
+      diagram.commitTransaction('add child');
+    }
+    const addBtn = $(go.Panel, 'Spot',
+      {
+        cursor: 'pointer',
+        alignment: go.Spot.Right,
+        alignmentFocus: go.Spot.Center,
+        click: addChildNode,
+        mouseEnter: (e, obj) => { const bg = obj.findObject('ADD_BG'); if (bg) bg.fill = '#bbdefb'; },
+        mouseLeave: (e, obj) => { const bg = obj.findObject('ADD_BG'); if (bg) bg.fill = '#e3f2fd'; },
+      },
+      $(go.Shape, 'Circle',
+        {
+          name: 'ADD_BG',
+          desiredSize: new go.Size(22, 22),
+          fill: '#e3f2fd',
+          stroke: '#2196f3',
+          strokeWidth: 2,
+        }
+      ),
+      $(go.TextBlock, '+',
+        {
+          font: 'bold 15px sans-serif',
+          stroke: '#2196f3',
+        }
+      )
+    );
+    return $(go.Node, 'Spot',
+      { minSize: new go.Size(60, 30), margin: 4 },
+      $(go.Panel, 'Auto',
+        $(go.Shape, 'RoundedRectangle',
+          { fill: '#e8ecf4', stroke: '#8e8e93', strokeWidth: 1.5, parameter1: 6 },
+          new go.Binding('fill', 'color', c => c || '#e8ecf4'),
+          new go.Binding('stroke', 'bordercolor', c => c || '#8e8e93')),
+        $(go.TextBlock,
+          { margin: 8, font: '13px Poppins, sans-serif', textAlign: 'center', editable: true },
+          new go.Binding('text', 'text').makeTwoWay())
+      ),
+      addBtn
+    );
+  }
+
+  function makeGojsLinkTemplate() {
+    if (typeof go === 'undefined') return null;
+    const $ = go.GraphObject.make;
+    return $(go.Link,
+      { routing: go.Link.AvoidsNodes, curve: go.Link.Bezier, corner: 6 },
+      $(go.Shape, { strokeWidth: 1.5 }, new go.Binding('stroke', 'color', c => c || '#8e8e93')),
+      $(go.Shape, { toArrow: 'Triangle', stroke: null, scale: 0.7 }, new go.Binding('fill', 'color', c => c || '#8e8e93'))
+    );
+  }
+
+  function initGojsDiagrams() {
+    if (typeof go === 'undefined') return;
+    if (!go.Diagram.licenseKey) go.Diagram.licenseKey = ''; // get a free key at https://gojs.net/license to remove the watermark
+    for (const [id, diag] of gojsDiagrams) {
+      diag.div = null;
+    }
+    gojsDiagrams.clear();
+    document.querySelectorAll('.gojs-container[data-diagram-id]').forEach(container => {
+      const noteId = container.dataset.diagramId;
+      const note = notes.find(n => n.id === noteId);
+      if (!note) return;
+      const $ = go.GraphObject.make;
+      const diagram = $(go.Diagram, container, {
+        'undoManager.isEnabled': true,
+        allowDelete: true,
+        allowCopy: true,
+        allowInsert: true,
+        'draggingTool.isEnabled': true,
+        'relinkingTool.isEnabled': true,
+        'clickCreatingTool.isEnabled': false,
+        'toolManager.mouseWheelBehavior': go.ToolManager.WheelZoom,
+        grid: $(go.Panel, 'Grid',
+          $(go.Shape, 'LineH', { stroke: 'rgba(0,0,0,0.04)', strokeWidth: 0.5 }),
+          $(go.Shape, 'LineV', { stroke: 'rgba(0,0,0,0.04)', strokeWidth: 0.5 })
+        ),
+        isReadOnly: false,
+        layout: $(go.LayeredDigraphLayout, { direction: 0, layeringOption: 0 }),
+      });
+      const nodeTempl = makeGojsNodeTemplate();
+      if (nodeTempl) diagram.nodeTemplate = nodeTempl;
+      const linkTempl = makeGojsLinkTemplate();
+      if (linkTempl) diagram.linkTemplate = linkTempl;
+      let modelData;
+      try {
+        modelData = JSON.parse(note.text || '{}');
+      } catch { modelData = { nodeDataArray: [], linkDataArray: [] }; }
+      if (!modelData.nodeDataArray) modelData.nodeDataArray = [];
+      if (!modelData.linkDataArray) modelData.linkDataArray = [];
+      diagram.model = $(go.GraphLinksModel, {
+        nodeDataArray: modelData.nodeDataArray,
+        linkDataArray: modelData.linkDataArray,
+        linkFromPortIdProperty: null,
+        linkToPortIdProperty: null,
+      });
+      gojsDiagrams.set(noteId, diagram);
+    });
+  }
+
+  function restyleGojsDiagram(noteId) {
+    const diag = gojsDiagrams.get(noteId);
+    if (!diag) return;
+    const nodeData = diag.model.nodeDataArray;
+    const linkData = diag.model.linkDataArray;
+    const palette = [
+      { fill: '#ffe0e0', border: '#ff6b6b' }, { fill: '#fff3d6', border: '#feca57' },
+      { fill: '#d6f5ff', border: '#48dbfb' }, { fill: '#ffe0f7', border: '#ff9ff3' },
+      { fill: '#d6e8ff', border: '#54a0ff' }, { fill: '#e8d6ff', border: '#5f27cd' },
+      { fill: '#d6fff5', border: '#01a3a4' }, { fill: '#ffd6f0', border: '#f368e0' },
+      { fill: '#ffd6d6', border: '#ee5a24' }, { fill: '#d6faff', border: '#0abde3' },
+    ];
+    diag.startTransaction('restyle');
+    nodeData.forEach((n, i) => {
+      const p = palette[i % palette.length];
+      diag.model.setDataProperty(n, 'color', p.fill);
+      diag.model.setDataProperty(n, 'bordercolor', p.border);
+    });
+    const linkColor = palette[Math.floor(Math.random() * palette.length)].border;
+    linkData.forEach(l => diag.model.setDataProperty(l, 'color', linkColor));
+    diag.commitTransaction('restyle');
+    const note = notes.find(n => n.id === noteId);
+    if (note) {
+      note.text = saveGojsDiagram(noteId) || note.text;
+      saveCanvasData();
+    }
+  }
+
+  function autolayoutGojsDiagram(noteId) {
+    const diag = gojsDiagrams.get(noteId);
+    if (!diag) return;
+    diag.layoutDiagram(true);
+  }
+
+  function saveGojsDiagram(noteId) {
+    const diag = gojsDiagrams.get(noteId);
+    if (!diag) return null;
+    const model = diag.model;
+    return JSON.stringify({ nodeDataArray: model.nodeDataArray, linkDataArray: model.linkDataArray });
+  }
+
   function autoLayoutNotes() {
     const active = notes.filter(n => !n.archived);
     if (!active.length) return;
@@ -5480,6 +5825,8 @@ def greet(name):
     });
     if (!ok) return;
     notes.length = 0;
+    for (const [id, diag] of gojsDiagrams) { diag.div = null; }
+    gojsDiagrams.clear();
     saveCanvasData();
     document.querySelectorAll('.draggable-note').forEach(el => el.remove());
     renderSidebar();
@@ -5510,6 +5857,8 @@ def greet(name):
     sidebarOpen = false;
     document.getElementById('notesSidebar').classList.remove('visible');
     document.getElementById('notesSidebarOverlay').classList.remove('visible');
+    const p = document.getElementById('graphTemplatePopup');
+    if (p) p.classList.remove('visible');
   }
 
   function renderSidebar() {
@@ -5576,7 +5925,7 @@ def greet(name):
       return;
     } else {
       titleEl.textContent = '\uD83D\uDCCC Notes';
-      actionsEl.innerHTML = '<button type="button" class="notes-sidebar-add simple" id="notesSidebarAddSimple" title="New simple note" aria-label="New simple note">+</button><button type="button" class="notes-sidebar-add markdown" id="notesSidebarAddMarkdown" title="New markdown note" aria-label="New markdown note">Md</button><button type="button" class="notes-sidebar-close" id="notesSidebarClose" aria-label="Close notes">\u2715</button>';
+      actionsEl.innerHTML = '<button type="button" class="notes-sidebar-add simple" id="notesSidebarAddSimple" title="New simple note" aria-label="New simple note">+</button><button type="button" class="notes-sidebar-add markdown" id="notesSidebarAddMarkdown" title="New markdown note" aria-label="New markdown note">Md</button><button type="button" class="notes-sidebar-add graph" id="notesSidebarAddGraph" title="New graph note" aria-label="New graph note">Gr</button><button type="button" class="notes-sidebar-close" id="notesSidebarClose" aria-label="Close notes">\u2715</button>';
 
       html += '<div class="sidebar-section-header"><span>Canvases</span><button class="header-btn" id="canvasAddBtn" title="New canvas">+</button></div>';
       html += '<div class="canvas-list">';
@@ -5644,7 +5993,7 @@ def greet(name):
       }
 
       if (!activeNotes.length && !archivedNotes.length) {
-        html += '<div class="notes-sidebar-empty">No notes yet.<br>Use <strong>+</strong> for a simple note or <strong>Md</strong> for markdown.</div>';
+        html += '<div class="notes-sidebar-empty">No notes yet.<br>Use <strong>+</strong>, <strong>Md</strong>, or <strong>Gr</strong>.</div>';
       }
     }
 
@@ -6225,7 +6574,7 @@ def greet(name):
   }
 
   function ensureNoteFormat(note) {
-    if (!note.format || !['plain', 'markdown', 'image', 'mermaid'].includes(note.format)) {
+    if (!note.format || !['plain', 'markdown', 'image', 'mermaid', 'graph'].includes(note.format)) {
       note.format = 'plain';
     }
   }
@@ -6271,13 +6620,14 @@ def greet(name):
         <button class="note-copy-btn" data-copy-id="${n.id}" title="Copy to clipboard">\uD83D\uDCCB</button>
         <button class="note-dir-btn${n.dir === 'rtl' ? ' rtl' : ''}" data-dir-id="${n.id}" title="Toggle text direction">${n.dir === 'rtl' ? '\u2794' : '\u2190'}</button>
         <div class="draggable-note-time">${n.apiId ? '\uD83D\uDD0C\uFE0F ' : ''}${time}</div>
-        <div class="draggable-note-text ${n.format === 'markdown' ? 'note-markdown' : n.format === 'mermaid' ? 'note-mermaid' : 'note-plain'}" dir="${n.dir || 'ltr'}" data-text-id="${n.id}">${renderNoteContent(n)}</div>
+        <div class="draggable-note-text ${n.format === 'markdown' ? 'note-markdown' : n.format === 'mermaid' ? 'note-mermaid' : n.format === 'graph' ? 'note-graph-text' : 'note-plain'}" dir="${n.dir || 'ltr'}" data-text-id="${n.id}">${renderNoteContent(n)}</div>
         ${n.tags && n.tags.length ? `<div class="draggable-note-tags">${n.tags.map(t => `<span class="note-tag" data-tag-name="${t}">${escapeHtml(t)}<button class="note-tag-remove" data-tag-rm="${n.id}" data-tag-name="${t}">✕</button></span>`).join('')}</div>` : ''}
         ${handleHTML}`;
 
       el.addEventListener('mousedown', (e) => {
-        if (e.target.closest('.draggable-note-delete') || e.target.closest('.note-resize-handle') || e.target.closest('.note-edit-btn') || e.target.closest('.note-focus-btn') || e.target.closest('.note-tag-btn') || e.target.closest('.note-pin-btn') || e.target.closest('.note-copy-btn') || e.target.closest('.note-dir-btn') || e.target.closest('.mermaid-toggle-btn')) return;
+        if (e.target.closest('.draggable-note-delete') || e.target.closest('.note-resize-handle') || e.target.closest('.note-edit-btn') || e.target.closest('.note-focus-btn') || e.target.closest('.note-tag-btn') || e.target.closest('.note-pin-btn') || e.target.closest('.note-copy-btn') || e.target.closest('.note-dir-btn') || e.target.closest('.mermaid-toggle-btn') || e.target.closest('.gojs-restyle-btn')) return;
         if (e.target.closest('.draggable-note-text.editing')) return;
+        if (e.target.closest('.gojs-container') || e.target.closest('canvas') || e.target.closest('.gojs-source')) return;
         if (e.button !== 0) return;
 
         const rect = el.getBoundingClientRect();
@@ -6308,6 +6658,7 @@ def greet(name):
 
       const textEl = el.querySelector('.draggable-note-text');
       textEl.addEventListener('dblclick', (e) => {
+        if (n.format === 'graph') return;
         e.stopPropagation();
         if (!textEl.classList.contains('editing')) {
           enterEditMode(textEl);
@@ -6401,9 +6752,19 @@ def greet(name):
         });
       }
 
+      const restyleBtn = el.querySelector('.gojs-restyle-btn');
+      if (restyleBtn) {
+        restyleBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          restyleGojsDiagram(n.id);
+          showToast('\uD83C\uDFA8 Diagram restyled');
+        });
+      }
+
       document.body.appendChild(el);
     });
     renderMermaidDiagrams();
+    initGojsDiagrams();
   }
 
   document.addEventListener('mousemove', (e) => {
@@ -6460,6 +6821,10 @@ def greet(name):
       if (dragState.type === 'resize') {
         note.w = parseFloat(dragState.el.style.width);
         note.h = parseFloat(dragState.el.style.height);
+        if (note.format === 'graph') {
+          const diag = gojsDiagrams.get(id);
+          if (diag) requestAnimationFrame(() => diag.requestUpdate());
+        }
       }
       saveCanvasData();
     }
@@ -6778,6 +7143,11 @@ def greet(name):
   document.addEventListener('click', (e) => {
     if (e.target.id === 'notesSidebarAddSimple' || e.target.closest('#notesSidebarAddSimple')) createSimpleNote(null);
     if (e.target.id === 'notesSidebarAddMarkdown' || e.target.closest('#notesSidebarAddMarkdown')) createMarkdownNote(null);
+    if (e.target.id === 'notesSidebarAddGraph' || e.target.closest('#notesSidebarAddGraph')) showGraphTemplatePopup();
+    const tmplItem = e.target.closest('.graph-template-item[data-graph-template]');
+    if (tmplItem) { createGraphNote(null, { templateName: tmplItem.dataset.graphTemplate }); return; }
+    const popup = document.getElementById('graphTemplatePopup');
+    if (popup && popup.classList.contains('visible') && !popup.contains(e.target) && !e.target.closest('.notes-sidebar-add.graph')) popup.classList.remove('visible');
     if (e.target.id === 'apiAddBtn' || e.target.closest('#apiAddBtn')) openApiConfig(null);
   });
 
@@ -6854,6 +7224,25 @@ def greet(name):
     const note = notes.find(n => n.id === id);
     if (note) {
       if (note.format === 'image') return;
+      if (note.format === 'graph') {
+        const ta = textEl.querySelector('.gojs-source');
+        if (ta) {
+          try {
+            const parsed = JSON.parse(ta.value);
+            if (parsed && parsed.nodeDataArray) {
+              note.text = ta.value;
+            } else {
+              showToast('\u26A0\uFE0F Invalid graph data');
+            }
+          } catch { showToast('\u26A0\uFE0F Invalid JSON'); }
+        }
+        saveCanvasData();
+        textEl.innerHTML = renderNoteContent(note);
+        initGojsDiagrams();
+        const editBtn = noteEl.querySelector('.note-edit-btn');
+        if (editBtn) editBtn.classList.remove('editing');
+        return;
+      }
       if (note.format === 'plain' && hasFormatting(textEl.innerHTML)) {
         note.text = textEl.innerHTML || '';
       } else {
@@ -6877,6 +7266,22 @@ def greet(name):
     if (!note) return;
     if (note.format === 'image') {
       showToast('\u26A0\uFE0F Image notes cannot be edited');
+      return;
+    }
+    if (note.format === 'graph') {
+      const container = textEl.querySelector('.gojs-container');
+      const diag = gojsDiagrams.get(id);
+      if (container && diag) {
+        const json = saveGojsDiagram(id) || note.text || '{}';
+        const ta = document.createElement('textarea');
+        ta.className = 'gojs-source';
+        ta.value = json;
+        const editBtn = noteEl.querySelector('.note-edit-btn');
+        if (editBtn) editBtn.classList.add('editing');
+        container.replaceWith(ta);
+        textEl.classList.add('editing', 'editing-plain');
+        setTimeout(() => ta.focus(), 50);
+      }
       return;
     }
     if (note.format === 'plain' && hasFormatting(note.text || '')) {
@@ -6929,6 +7334,7 @@ def greet(name):
       <div class="context-menu-item" data-note-action="copy" data-note-id="${noteId}">\uD83D\uDCCB Copy Text</div>
       <div class="context-menu-item" data-note-action="duplicate" data-note-id="${noteId}">\uD83D\uDCCB Duplicate</div>
       ${note.format !== 'mermaid' ? `<div class="context-menu-item" data-note-action="diagram" data-note-id="${noteId}">\uD83E\uDE84 Convert to Mermaid</div>` : ''}
+      ${note.format !== 'graph' ? `<div class="context-menu-item" data-note-action="graph" data-note-id="${noteId}">\uD83D\uDD17 Convert to Graph</div>` : ''}
       <div class="context-menu-item" data-note-action="dir" data-note-id="${noteId}">\u2194 ${note.dir === 'rtl' ? 'LTR' : 'RTL'}</div>
       <div class="context-menu-divider"></div>
       <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-tertiary);padding:4px 14px 6px;">API Data</div>
@@ -7014,6 +7420,23 @@ def greet(name):
           if (note && note.text) {
             const sc = slashCommands.find(c => c.id === 'diagram');
             doChatToMermaid(note.text, sc ? sc.systemPrompt : undefined, 'Mermaid from Text');
+          }
+        }
+        else if (nid && naction === 'graph') {
+          const note = notes.find(n => n.id === nid);
+          if (note) {
+            note.format = 'graph';
+            let graphData;
+            try { graphData = JSON.parse(note.text || '{}'); } catch { graphData = null; }
+            if (!graphData || !graphData.nodeDataArray) {
+              const tmpl = GRAPH_TEMPLATES.blank;
+              note.text = JSON.stringify({ nodeDataArray: tmpl.nodes, linkDataArray: tmpl.links });
+            }
+            note.w = 320; note.h = 260;
+            saveCanvasData();
+            renderStickyNotes();
+            renderSidebar();
+            showToast('\uD83D\uDD17 Converted to Graph');
           }
         }
         else if (nid && (naction === 'pin' || naction === 'unpin')) togglePinNote(nid);
@@ -7228,6 +7651,7 @@ def greet(name):
         const id = noteEl.dataset.id;
         const note = notes.find(n => n.id === id);
         if (note && el.classList.contains('editing')) {
+          if (note.format === 'graph') return;
           note.text = el.textContent || '';
           saveCanvasData();
         }
