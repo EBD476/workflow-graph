@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&family=Vazirmatn:wght@400;500;600;700&family=Lalezar&family=Markazi+Text:wght@400;500;600;700&family=Readex+Pro:wght@400;500;600;700&display=swap" rel="stylesheet"> 
   <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
   <script src="go.js"></script>
   <title>Command Palette</title>
   <style>
@@ -2225,6 +2226,18 @@
       transform: scale(1.15);
       background: rgba(255,255,255,0.95);
     }
+    .chart-note-wrap {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    .chart-container {
+      flex: 1;
+      min-height: 0;
+      width: 100%;
+    }
     .gojs-source {
       width: 100%;
       height: 100%;
@@ -2244,7 +2257,22 @@
       background: rgba(0,0,0,0.06);
     }
     .note-graph-text {
+      position: relative;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
       overflow: hidden;
+    }
+    .note-chart-text {
+      position: relative;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      overflow: hidden;
+      padding: 0;
+      white-space: normal;
     }
 
     .graph-template-popup {
@@ -2271,7 +2299,8 @@
       transform: translateY(0) scale(1);
       pointer-events: auto;
     }
-    .graph-template-item {
+    .graph-template-item,
+    .chart-template-item {
       padding: 6px 10px;
       border-radius: 6px;
       font-size: 12px;
@@ -2280,11 +2309,23 @@
       transition: background 0.1s;
       white-space: nowrap;
     }
-    .graph-template-item:hover {
+    .graph-template-item:hover,
+    .chart-template-item:hover {
       background: rgba(0,0,0,0.06);
     }
-    .dark-theme .graph-template-item:hover {
+    .dark-theme .graph-template-item:hover,
+    .dark-theme .chart-template-item:hover {
       background: rgba(255,255,255,0.08);
+    }
+    .notes-sidebar-add.chart {
+      background: linear-gradient(135deg, #5470c6, #91cc75);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .notes-sidebar-add.chart:hover {
+      filter: brightness(1.1);
+      transform: scale(1.05);
     }
 
     .note-edit-btn {
@@ -3741,6 +3782,7 @@
         <button type="button" class="notes-sidebar-add simple" id="notesSidebarAddSimple" title="New simple note" aria-label="New simple note">+</button>
         <button type="button" class="notes-sidebar-add markdown" id="notesSidebarAddMarkdown" title="New markdown note" aria-label="New markdown note">Md</button>
         <button type="button" class="notes-sidebar-add graph" id="notesSidebarAddGraph" title="New graph note" aria-label="New graph note">Gr</button>
+        <button type="button" class="notes-sidebar-add chart" id="notesSidebarAddChart" title="New chart note" aria-label="New chart note">Ch</button>
         <button type="button" class="notes-sidebar-close" id="notesSidebarClose" aria-label="Close notes">✕</button>
       </div>
     </div>
@@ -3756,6 +3798,15 @@
   <div class="graph-template-item" data-graph-template="flowchart">Flowchart</div>
   <div class="graph-template-item" data-graph-template="orgchart">Org Chart</div>
   <div class="graph-template-item" data-graph-template="mindmap">Mind Map</div>
+</div>
+<div class="graph-template-popup" id="chartTemplatePopup">
+  <div class="chart-template-item" data-chart-template="bar">Bar</div>
+  <div class="chart-template-item" data-chart-template="line">Line</div>
+  <div class="chart-template-item" data-chart-template="pie">Pie</div>
+  <div class="chart-template-item" data-chart-template="doughnut">Doughnut</div>
+  <div class="chart-template-item" data-chart-template="area">Area</div>
+  <div class="chart-template-item" data-chart-template="radar">Radar</div>
+  <div class="chart-template-item" data-chart-template="scatter">Scatter</div>
 </div>
 
 <div class="overlay" id="overlay"></div>
@@ -3918,6 +3969,13 @@
     { id: 'graph-flowchart',  title: 'Graph: Flowchart', subtitle: 'Start \u2192 Process \u2192 Decision \u2192 End', icon: '\u2194', color: '#30d158', shortcut: [], action: () => createGraphNote(null, { templateName: 'flowchart' }) },
     { id: 'graph-orgchart',   title: 'Graph: Org Chart', subtitle: 'CEO \u2192 VPs \u2192 Managers',           icon: '\u2B1D', color: '#30d158', shortcut: [], action: () => createGraphNote(null, { templateName: 'orgchart' }) },
     { id: 'graph-mindmap',    title: 'Graph: Mind Map', subtitle: 'Central idea with branches',        icon: '\u2606', color: '#30d158', shortcut: [], action: () => createGraphNote(null, { templateName: 'mindmap' }) },
+    { id: 'chart-bar',     title: 'Chart: Bar',       subtitle: 'Bar chart template',               icon: '\u2590', color: '#5470c6', shortcut: [], action: () => createChartNote('bar') },
+    { id: 'chart-line',    title: 'Chart: Line',      subtitle: 'Line chart template',              icon: '\u2571', color: '#5470c6', shortcut: [], action: () => createChartNote('line') },
+    { id: 'chart-pie',     title: 'Chart: Pie',       subtitle: 'Pie chart template',               icon: '\u25D5', color: '#ee6666', shortcut: [], action: () => createChartNote('pie') },
+    { id: 'chart-doughnut',title: 'Chart: Doughnut',  subtitle: 'Doughnut chart template',          icon: '\u25C9', color: '#fac858', shortcut: [], action: () => createChartNote('doughnut') },
+    { id: 'chart-area',    title: 'Chart: Area',      subtitle: 'Area chart template',              icon: '\u2B25', color: '#91cc75', shortcut: [], action: () => createChartNote('area') },
+    { id: 'chart-radar',   title: 'Chart: Radar',     subtitle: 'Radar chart template',             icon: '\u2B26', color: '#73c0de', shortcut: [], action: () => createChartNote('radar') },
+    { id: 'chart-scatter', title: 'Chart: Scatter',   subtitle: 'Scatter chart template',           icon: '\u2756', color: '#ff9f43', shortcut: [], action: () => createChartNote('scatter') },
     { id: 'view-notes',  title: 'View Notes',         subtitle: 'Show all sticky notes',          icon: '\uD83D\uDCCC', color: '#5ac8fa', shortcut: [], action: () => openSidebar('notes') },
     { id: 'clear-notes', title: 'Clear All Notes',    subtitle: 'Remove all sticky notes',        icon: '\u267B', color: '#ff3b30', shortcut: [], action: clearAllNotes },
     { id: 'new-canvas',  title: 'New Canvas',          subtitle: 'Create a new canvas',            icon: '+', color: '#5ac8fa', shortcut: [], action: () => addCanvas(prompt('Canvas name:', 'Canvas ' + (canvases.length + 1)) || '') },
@@ -3957,6 +4015,118 @@ def greet(name):
     flowchart: { label: 'Flowchart', nodes: [{ key: 'start', text: 'Start' }, { key: 'proc', text: 'Process' }, { key: 'dec', text: 'Decision?' }, { key: 'end', text: 'End' }], links: [{ from: 'start', to: 'proc' }, { from: 'proc', to: 'dec' }, { from: 'dec', to: 'end' }] },
     orgchart: { label: 'Org Chart', nodes: [{ key: 'ceo', text: 'CEO' }, { key: 'vp1', text: 'VP Eng' }, { key: 'vp2', text: 'VP Mktg' }, { key: 'm1', text: 'Eng Mgr' }, { key: 'm2', text: 'Mktg Mgr' }], links: [{ from: 'ceo', to: 'vp1' }, { from: 'ceo', to: 'vp2' }, { from: 'vp1', to: 'm1' }, { from: 'vp2', to: 'm2' }] },
     mindmap: { label: 'Mind Map', nodes: [{ key: 'c', text: 'Main Idea' }, { key: 'b1', text: 'Branch 1' }, { key: 'b2', text: 'Branch 2' }, { key: 'b3', text: 'Branch 3' }, { key: 'b4', text: 'Branch 4' }], links: [{ from: 'c', to: 'b1' }, { from: 'c', to: 'b2' }, { from: 'c', to: 'b3' }, { from: 'c', to: 'b4' }] },
+  };
+
+  const CHART_TEMPLATES = {
+    bar: {
+      label: 'Bar Chart',
+      option: {
+        tooltip: { trigger: 'axis' },
+        grid: { left: '10%', right: '10%', bottom: '15%', top: '10%', containLabel: true },
+        xAxis: { type: 'category', data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], axisLabel: { fontSize: 10 } },
+        yAxis: { type: 'value', axisLabel: { fontSize: 10 } },
+        series: [{ type: 'bar', data: [120, 200, 150, 80, 70, 110, 130], itemStyle: { borderRadius: [4,4,0,0] } }],
+        color: ['#5470c6'],
+      }
+    },
+    line: {
+      label: 'Line Chart',
+      option: {
+        tooltip: { trigger: 'axis' },
+        grid: { left: '10%', right: '10%', bottom: '15%', top: '10%', containLabel: true },
+        xAxis: { type: 'category', data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], axisLabel: { fontSize: 10 } },
+        yAxis: { type: 'value', axisLabel: { fontSize: 10 } },
+        series: [{ type: 'line', data: [120, 200, 150, 80, 70, 110, 130], smooth: true, areaStyle: { opacity: 0.15 } }],
+        color: ['#5470c6'],
+      }
+    },
+    pie: {
+      label: 'Pie Chart',
+      option: {
+        tooltip: { trigger: 'item' },
+        series: [{
+          type: 'pie', radius: ['0%', '70%'], center: ['50%', '50%'],
+          data: [
+            { value: 1048, name: 'Search' },
+            { value: 735, name: 'Direct' },
+            { value: 580, name: 'Email' },
+            { value: 484, name: 'Union' },
+            { value: 300, name: 'Video' },
+          ],
+          label: { fontSize: 10 },
+          emphasis: { itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0,0,0,0.5)' } }
+        }],
+        color: ['#5470c6', '#91cc75', '#fac858', '#ee6666', '#73c0de'],
+      }
+    },
+    doughnut: {
+      label: 'Doughnut Chart',
+      option: {
+        tooltip: { trigger: 'item' },
+        series: [{
+          type: 'pie', radius: ['45%', '70%'], center: ['50%', '50%'],
+          data: [
+            { value: 1048, name: 'Search' },
+            { value: 735, name: 'Direct' },
+            { value: 580, name: 'Email' },
+            { value: 484, name: 'Union' },
+            { value: 300, name: 'Video' },
+          ],
+          label: { fontSize: 10 },
+          emphasis: { itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0,0,0,0.5)' } }
+        }],
+        color: ['#5470c6', '#91cc75', '#fac858', '#ee6666', '#73c0de'],
+      }
+    },
+    area: {
+      label: 'Area Chart',
+      option: {
+        tooltip: { trigger: 'axis' },
+        grid: { left: '10%', right: '10%', bottom: '15%', top: '10%', containLabel: true },
+        xAxis: { type: 'category', data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], axisLabel: { fontSize: 10 } },
+        yAxis: { type: 'value', axisLabel: { fontSize: 10 } },
+        series: [{ type: 'line', data: [120, 200, 150, 80, 70, 110, 130], smooth: true, areaStyle: { opacity: 0.4 }, lineStyle: { width: 2 } }],
+        color: ['#91cc75'],
+      }
+    },
+    radar: {
+      label: 'Radar Chart',
+      option: {
+        tooltip: { trigger: 'item' },
+        radar: {
+          indicator: [
+            { name: 'Sales', max: 100 },
+            { name: 'Admin', max: 100 },
+            { name: 'Tech', max: 100 },
+            { name: 'Support', max: 100 },
+            { name: 'Dev', max: 100 },
+          ],
+          shape: 'circle',
+          radius: '60%',
+        },
+        series: [{
+          type: 'radar', data: [{ value: [90, 60, 85, 70, 95], name: 'Current' }],
+          areaStyle: { opacity: 0.2 },
+          lineStyle: { width: 2 },
+        }],
+        color: ['#5470c6'],
+      }
+    },
+    scatter: {
+      label: 'Scatter Chart',
+      option: {
+        tooltip: { trigger: 'axis' },
+        grid: { left: '10%', right: '10%', bottom: '15%', top: '10%', containLabel: true },
+        xAxis: { type: 'value', axisLabel: { fontSize: 10 } },
+        yAxis: { type: 'value', axisLabel: { fontSize: 10 } },
+        series: [{
+          type: 'scatter',
+          data: [[10, 30], [20, 45], [30, 25], [40, 60], [50, 35], [60, 70], [70, 40], [80, 55], [90, 30], [100, 65]],
+          symbolSize: 8,
+        }],
+        color: ['#5470c6'],
+      }
+    },
   };
 
   let LLM_ENDPOINT = localStorage.getItem('llm_endpoint') || 'http://192.168.167.70:11434/api/chat';
@@ -4880,6 +5050,9 @@ def greet(name):
           setTimeout(() => renderMermaidInElement(noteEl), 50);
         }
       }
+      if (n.format === 'chart') {
+        setTimeout(() => initEChartsDiagrams(), 50);
+      }
     });
     if (sidebarOpen && sidebarMode === 'api') renderSidebar();
   }
@@ -5115,6 +5288,16 @@ def greet(name):
         return '\uD83D\uDD17 Graph (' + n + ' node' + (n !== 1 ? 's' : '') + ', ' + l + ' link' + (l !== 1 ? 's' : '') + ')';
       } catch { return '\uD83D\uDD17 Graph'; }
     }
+    if (note.format === 'chart') {
+      try {
+        const d = JSON.parse(note.text || '{}');
+        const t = d.type || 'chart';
+        return '\uD83D\uDCCA ' + t.charAt(0).toUpperCase() + t.slice(1) + ' chart';
+      } catch { return '\uD83D\uDCCA Chart'; }
+    }
+    if (note.format === 'mermaid') {
+      return '\uD83D\uDD37 Mermaid diagram';
+    }
     const raw = (note.text || '').trim();
     if (!raw) return 'Empty note';
     if (note.format === 'markdown') return stripMarkdownForPreview(raw);
@@ -5214,6 +5397,12 @@ def greet(name):
     }
     if (note.format === 'graph') {
       return `<div class="gojs-note-wrap"><div class="gojs-container" data-diagram-id="${note.id}"></div><button class="gojs-restyle-btn" data-restyle-id="${note.id}" title="Restyle diagram">\uD83C\uDFA8</button></div>`;
+    }
+    if (note.format === 'chart') {
+      const chartId = 'chart-' + note.id;
+      return `<div class="chart-note-wrap">
+        <div id="${chartId}" class="chart-container" data-chart-id="${note.id}"></div>
+      </div>`;
     }
     let text = note.text || '';
     if (note.apiId && apiDataCache[note.apiId]) {
@@ -5386,7 +5575,23 @@ def greet(name):
     const popup = document.getElementById('graphTemplatePopup');
     if (!popup) return;
     if (popup.classList.contains('visible')) { popup.classList.remove('visible'); return; }
+    document.getElementById('chartTemplatePopup')?.classList.remove('visible');
     const btn = document.getElementById('notesSidebarAddGraph');
+    if (btn) {
+      const rect = btn.getBoundingClientRect();
+      popup.style.left = Math.max(8, rect.left + rect.width / 2 - 70) + 'px';
+      popup.style.top = (rect.bottom + 4) + 'px';
+      popup.style.transform = '';
+    }
+    popup.classList.add('visible');
+  }
+
+  function showChartTemplatePopup() {
+    const popup = document.getElementById('chartTemplatePopup');
+    if (!popup) return;
+    if (popup.classList.contains('visible')) { popup.classList.remove('visible'); return; }
+    document.getElementById('graphTemplatePopup')?.classList.remove('visible');
+    const btn = document.getElementById('notesSidebarAddChart');
     if (btn) {
       const rect = btn.getBoundingClientRect();
       popup.style.left = Math.max(8, rect.left + rect.width / 2 - 70) + 'px';
@@ -5430,6 +5635,38 @@ def greet(name):
     const popup = document.getElementById('graphTemplatePopup');
     if (popup) popup.classList.remove('visible');
     showToast(`\uD83D\uDD17 Graph note created (${tmpl.label})`);
+  }
+
+  function createChartNote(templateName) {
+    const tmpl = CHART_TEMPLATES[templateName] || CHART_TEMPLATES.bar;
+    const note = {
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+      text: JSON.stringify({ type: templateName, option: tmpl.option }),
+      format: 'chart',
+      chartType: templateName,
+      z: getNextNoteZ(),
+      color: getRandomColor(),
+      tags: [],
+      dir: 'ltr',
+      apiId: null,
+      created: Date.now(),
+      visible: true,
+      archived: false,
+      pinned: false,
+      x: 60 + Math.random() * 200,
+      y: 100 + Math.random() * 300,
+      w: 300,
+      h: 260,
+    };
+    notes.unshift(note);
+    if (notes.filter(n => !n.archived).length > 50) {
+      const last = notes.filter(n => !n.archived && !n.pinned).pop();
+      if (last) archiveNote(last.id, true);
+    }
+    saveCanvasData();
+    renderStickyNotes();
+    renderSidebar();
+    showToast(`\uD83D\uDCCA Chart note created (${tmpl.label})`);
   }
 
   function duplicateNote(id) {
@@ -5765,6 +6002,48 @@ def greet(name):
     return JSON.stringify({ nodeDataArray: model.nodeDataArray, linkDataArray: model.linkDataArray });
   }
 
+  const echartsInstances = new Map();
+
+  function initEChartsDiagrams() {
+    if (typeof echarts === 'undefined') return;
+    for (const [id, inst] of echartsInstances) {
+      inst.dispose();
+    }
+    echartsInstances.clear();
+    document.querySelectorAll('.chart-container[data-chart-id]').forEach(container => {
+      const noteId = container.dataset.chartId;
+      const note = notes.find(n => n.id === noteId);
+      if (!note) return;
+      let chartData;
+      try {
+        chartData = JSON.parse(note.text || '{}');
+      } catch { return; }
+      if (!chartData.option) return;
+      const isDark = document.documentElement.classList.contains('dark-theme') || window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const inst = echarts.init(container, isDark ? 'dark' : null);
+      inst.setOption(chartData.option);
+      echartsInstances.set(noteId, inst);
+
+      const onResize = () => {
+        const noteEl = container.closest('.draggable-note');
+        if (noteEl) {
+          inst.resize();
+        }
+      };
+      inst._chartNoteResize = onResize;
+      window.addEventListener('resize', onResize);
+
+      const obs = new ResizeObserver(() => inst.resize());
+      obs.observe(container);
+      inst._chartNoteObs = obs;
+    });
+  }
+
+  function resizeEChart(noteId) {
+    const inst = echartsInstances.get(noteId);
+    if (inst) inst.resize();
+  }
+
   function autoLayoutNotes() {
     const active = notes.filter(n => !n.archived);
     if (!active.length) return;
@@ -5959,6 +6238,9 @@ def greet(name):
       const fmtPlain = notes.filter(n => n.format === 'plain' && !n.archived).length;
       const fmtMd = notes.filter(n => n.format === 'markdown' && !n.archived).length;
       const fmtImg = notes.filter(n => n.format === 'image' && !n.archived).length;
+      const fmtGraph = notes.filter(n => n.format === 'graph' && !n.archived).length;
+      const fmtMermaid = notes.filter(n => n.format === 'mermaid' && !n.archived).length;
+      const fmtChart = notes.filter(n => n.format === 'chart' && !n.archived).length;
       const tagCounts = {};
       notes.forEach(n => (n.tags || []).forEach(t => { tagCounts[t] = (tagCounts[t] || 0) + 1; }));
       const topTags = Object.entries(tagCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
@@ -5968,12 +6250,16 @@ def greet(name):
       if (totalArchived) html += `<div class="stat-card"><span class="stat-card-value">${totalArchived}</span><span class="stat-card-label">Archived</span></div>`;
       html += `<div class="stat-card"><span class="stat-card-value">${tagCount}</span><span class="stat-card-label">Tags</span></div>`;
       html += `<div class="stat-card"><span class="stat-card-value">${totalWords.toLocaleString()}</span><span class="stat-card-label">Words</span></div>`;
-      if (fmtPlain || fmtMd || fmtImg) {
-        const maxFmt = Math.max(fmtPlain, fmtMd, fmtImg) || 1;
+      if (fmtPlain || fmtMd || fmtImg || fmtGraph || fmtMermaid || fmtChart) {
+        const allFmts = [fmtPlain, fmtMd, fmtImg, fmtGraph, fmtMermaid, fmtChart].filter(Boolean);
+        const maxFmt = Math.max(...allFmts, 1);
         html += `<div class="stat-card" style="min-width:100%"><span class="stat-card-label">By Format</span>`;
         if (fmtPlain) html += `<div class="stat-breakdown-row"><span style="min-width:32px">Text</span><div class="stat-bar"><div class="stat-bar-fill" style="width:${(fmtPlain/maxFmt)*100}%;background:#8e8e93"></div></div><span class="stat-count">${fmtPlain}</span></div>`;
         if (fmtMd) html += `<div class="stat-breakdown-row"><span style="min-width:32px">Md</span><div class="stat-bar"><div class="stat-bar-fill" style="width:${(fmtMd/maxFmt)*100}%;background:#bf5af2"></div></div><span class="stat-count">${fmtMd}</span></div>`;
         if (fmtImg) html += `<div class="stat-breakdown-row"><span style="min-width:32px">Img</span><div class="stat-bar"><div class="stat-bar-fill" style="width:${(fmtImg/maxFmt)*100}%;background:#ff9500"></div></div><span class="stat-count">${fmtImg}</span></div>`;
+        if (fmtGraph) html += `<div class="stat-breakdown-row"><span style="min-width:32px">Graph</span><div class="stat-bar"><div class="stat-bar-fill" style="width:${(fmtGraph/maxFmt)*100}%;background:#30d158"></div></div><span class="stat-count">${fmtGraph}</span></div>`;
+        if (fmtMermaid) html += `<div class="stat-breakdown-row"><span style="min-width:32px">Mdwn</span><div class="stat-bar"><div class="stat-bar-fill" style="width:${(fmtMermaid/maxFmt)*100}%;background:#34c759"></div></div><span class="stat-count">${fmtMermaid}</span></div>`;
+        if (fmtChart) html += `<div class="stat-breakdown-row"><span style="min-width:32px">Chart</span><div class="stat-bar"><div class="stat-bar-fill" style="width:${(fmtChart/maxFmt)*100}%;background:#5470c6"></div></div><span class="stat-count">${fmtChart}</span></div>`;
         html += `</div>`;
       }
       if (topTags.length) {
@@ -6000,7 +6286,7 @@ def greet(name):
       return;
     } else {
       titleEl.textContent = '\uD83D\uDCCC Notes';
-      actionsEl.innerHTML = '<button type="button" class="notes-sidebar-add simple" id="notesSidebarAddSimple" title="New simple note" aria-label="New simple note">+</button><button type="button" class="notes-sidebar-add markdown" id="notesSidebarAddMarkdown" title="New markdown note" aria-label="New markdown note">Md</button><button type="button" class="notes-sidebar-add graph" id="notesSidebarAddGraph" title="New graph note" aria-label="New graph note">Gr</button><button type="button" class="notes-sidebar-close" id="notesSidebarClose" aria-label="Close notes">\u2715</button>';
+      actionsEl.innerHTML = '<button type="button" class="notes-sidebar-add simple" id="notesSidebarAddSimple" title="New simple note" aria-label="New simple note">+</button><button type="button" class="notes-sidebar-add markdown" id="notesSidebarAddMarkdown" title="New markdown note" aria-label="New markdown note">Md</button><button type="button" class="notes-sidebar-add graph" id="notesSidebarAddGraph" title="New graph note" aria-label="New graph note">Gr</button><button type="button" class="notes-sidebar-add chart" id="notesSidebarAddChart" title="New chart note" aria-label="New chart note">Ch</button><button type="button" class="notes-sidebar-close" id="notesSidebarClose" aria-label="Close notes">\u2715</button>';
 
       html += '<div class="sidebar-section-header"><span>Canvases</span><button class="header-btn" id="canvasAddBtn" title="New canvas">+</button></div>';
       html += '<div class="canvas-list">';
@@ -6649,7 +6935,7 @@ def greet(name):
   }
 
   function ensureNoteFormat(note) {
-    if (!note.format || !['plain', 'markdown', 'image', 'mermaid', 'graph'].includes(note.format)) {
+    if (!note.format || !['plain', 'markdown', 'image', 'mermaid', 'graph', 'chart'].includes(note.format)) {
       note.format = 'plain';
     }
   }
@@ -6695,14 +6981,14 @@ def greet(name):
         <button class="note-copy-btn" data-copy-id="${n.id}" title="Copy to clipboard">\uD83D\uDCCB</button>
         <button class="note-dir-btn${n.dir === 'rtl' ? ' rtl' : ''}" data-dir-id="${n.id}" title="Toggle text direction">${n.dir === 'rtl' ? '\u2794' : '\u2190'}</button>
         <div class="draggable-note-time">${n.apiId ? '\uD83D\uDD0C\uFE0F ' : ''}${time}</div>
-        <div class="draggable-note-text ${n.format === 'markdown' ? 'note-markdown' : n.format === 'mermaid' ? 'note-mermaid' : n.format === 'graph' ? 'note-graph-text' : 'note-plain'}" dir="${n.dir || 'ltr'}" data-text-id="${n.id}">${renderNoteContent(n)}</div>
+        <div class="draggable-note-text ${n.format === 'markdown' ? 'note-markdown' : n.format === 'mermaid' ? 'note-mermaid' : n.format === 'graph' ? 'note-graph-text' : n.format === 'chart' ? 'note-chart-text' : 'note-plain'}" dir="${n.dir || 'ltr'}" data-text-id="${n.id}">${renderNoteContent(n)}</div>
         ${n.tags && n.tags.length ? `<div class="draggable-note-tags">${n.tags.map(t => `<span class="note-tag" data-tag-name="${t}">${escapeHtml(t)}<button class="note-tag-remove" data-tag-rm="${n.id}" data-tag-name="${t}">✕</button></span>`).join('')}</div>` : ''}
         ${handleHTML}`;
 
       el.addEventListener('mousedown', (e) => {
         if (e.target.closest('.draggable-note-delete') || e.target.closest('.note-resize-handle') || e.target.closest('.note-edit-btn') || e.target.closest('.note-focus-btn') || e.target.closest('.note-tag-btn') || e.target.closest('.note-pin-btn') || e.target.closest('.note-copy-btn') || e.target.closest('.note-dir-btn') || e.target.closest('.mermaid-toggle-btn') || e.target.closest('.gojs-restyle-btn')) return;
         if (e.target.closest('.draggable-note-text.editing')) return;
-        if (e.target.closest('.gojs-container') || e.target.closest('canvas') || e.target.closest('.gojs-source')) return;
+        if (e.target.closest('.gojs-container') || e.target.closest('canvas') || e.target.closest('.gojs-source') || e.target.closest('.chart-container') || e.target.closest('.chart-note-wrap')) return;
         if (e.button !== 0) return;
 
         const rect = el.getBoundingClientRect();
@@ -6733,7 +7019,7 @@ def greet(name):
 
       const textEl = el.querySelector('.draggable-note-text');
       textEl.addEventListener('dblclick', (e) => {
-        if (n.format === 'graph') return;
+        if (n.format === 'graph' || n.format === 'chart') return;
         e.stopPropagation();
         if (!textEl.classList.contains('editing')) {
           enterEditMode(textEl);
@@ -6840,6 +7126,7 @@ def greet(name):
     });
     renderMermaidDiagrams();
     initGojsDiagrams();
+    initEChartsDiagrams();
   }
 
   document.addEventListener('mousemove', (e) => {
@@ -6899,6 +7186,9 @@ def greet(name):
         if (note.format === 'graph') {
           const diag = gojsDiagrams.get(id);
           if (diag) requestAnimationFrame(() => diag.requestUpdate());
+        }
+        if (note.format === 'chart') {
+          requestAnimationFrame(() => resizeEChart(id));
         }
       }
       saveCanvasData();
@@ -7219,10 +7509,15 @@ def greet(name):
     if (e.target.id === 'notesSidebarAddSimple' || e.target.closest('#notesSidebarAddSimple')) createSimpleNote(null);
     if (e.target.id === 'notesSidebarAddMarkdown' || e.target.closest('#notesSidebarAddMarkdown')) createMarkdownNote(null);
     if (e.target.id === 'notesSidebarAddGraph' || e.target.closest('#notesSidebarAddGraph')) showGraphTemplatePopup();
+    if (e.target.id === 'notesSidebarAddChart' || e.target.closest('#notesSidebarAddChart')) showChartTemplatePopup();
     const tmplItem = e.target.closest('.graph-template-item[data-graph-template]');
     if (tmplItem) { createGraphNote(null, { templateName: tmplItem.dataset.graphTemplate }); return; }
+    const chartTmplItem = e.target.closest('.chart-template-item[data-chart-template]');
+    if (chartTmplItem) { createChartNote(chartTmplItem.dataset.chartTemplate); return; }
     const popup = document.getElementById('graphTemplatePopup');
     if (popup && popup.classList.contains('visible') && !popup.contains(e.target) && !e.target.closest('.notes-sidebar-add.graph')) popup.classList.remove('visible');
+    const chartPopup = document.getElementById('chartTemplatePopup');
+    if (chartPopup && chartPopup.classList.contains('visible') && !chartPopup.contains(e.target) && !e.target.closest('.notes-sidebar-add.chart')) chartPopup.classList.remove('visible');
     if (e.target.id === 'apiAddBtn' || e.target.closest('#apiAddBtn')) openApiConfig(null);
   });
 
@@ -7299,6 +7594,25 @@ def greet(name):
     const note = notes.find(n => n.id === id);
     if (note) {
       if (note.format === 'image') return;
+      if (note.format === 'chart') {
+        const ta = textEl.querySelector('.gojs-source');
+        if (ta) {
+          try {
+            const parsed = JSON.parse(ta.value);
+            if (parsed && parsed.option) {
+              note.text = ta.value;
+            } else {
+              showToast('\u26A0\uFE0F Invalid chart data');
+            }
+          } catch { showToast('\u26A0\uFE0F Invalid JSON'); }
+        }
+        saveCanvasData();
+        textEl.innerHTML = renderNoteContent(note);
+        initEChartsDiagrams();
+        const editBtn = noteEl.querySelector('.note-edit-btn');
+        if (editBtn) editBtn.classList.remove('editing');
+        return;
+      }
       if (note.format === 'graph') {
         const isMindmap = note.graphTemplate === 'mindmap' || isMindmapData(note.text);
         if (isMindmap && textEl.classList.contains('editing')) {
@@ -7326,6 +7640,7 @@ def greet(name):
         saveCanvasData();
         textEl.innerHTML = renderNoteContent(note);
         initGojsDiagrams();
+        initEChartsDiagrams();
         const editBtn = noteEl.querySelector('.note-edit-btn');
         if (editBtn) editBtn.classList.remove('editing');
         return;
@@ -7375,6 +7690,21 @@ def greet(name):
         const ta = document.createElement('textarea');
         ta.className = 'gojs-source';
         ta.value = json;
+        const editBtn = noteEl.querySelector('.note-edit-btn');
+        if (editBtn) editBtn.classList.add('editing');
+        container.replaceWith(ta);
+        textEl.classList.add('editing', 'editing-plain');
+        setTimeout(() => ta.focus(), 50);
+      }
+      return;
+    }
+    if (note.format === 'chart') {
+      const container = textEl.querySelector('.chart-container');
+      const inst = echartsInstances.get(id);
+      if (container && inst) {
+        const ta = document.createElement('textarea');
+        ta.className = 'gojs-source';
+        ta.value = note.text || '{}';
         const editBtn = noteEl.querySelector('.note-edit-btn');
         if (editBtn) editBtn.classList.add('editing');
         container.replaceWith(ta);
@@ -7747,8 +8077,8 @@ def greet(name):
       if (noteEl) {
         const id = noteEl.dataset.id;
         const note = notes.find(n => n.id === id);
-        if (note && el.classList.contains('editing')) {
-          if (note.format === 'graph') return;
+          if (note && el.classList.contains('editing')) {
+          if (note.format === 'graph' || note.format === 'chart') return;
           note.text = el.textContent || '';
           saveCanvasData();
         }
