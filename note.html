@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&family=Vazirmatn:wght@400;500;600;700&family=Lalezar&family=Markazi+Text:wght@400;500;600;700&family=Readex+Pro:wght@400;500;600;700&display=swap" rel="stylesheet"> 
   <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/gojs@3.0.13/release/go.js"></script>
+  <script src="go.js"></script>
   <title>Command Palette</title>
   <style>
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
@@ -4639,6 +4639,52 @@ def greet(name):
     }
   }
 
+  async function doChatToGraph(noteId, systemPrompt) {
+    const note = notes.find(n => n.id === noteId);
+    if (!note || !note.text) return;
+    closeSearch();
+    const sysMsg = systemPrompt || 'You are a graph diagram expert. Convert the provided text into a GoJS GraphLinksModel JSON format. Return ONLY valid JSON without markdown code fences, without explanation. The JSON must have "nodeDataArray" and "linkDataArray" properties. Each node must have a "key" (string or number) and "text" property. Each link must have "from" and "to" properties matching node keys. Choose the most appropriate graph structure (flowchart, org chart, mind map, network, etc.) for the content. Use meaningful labels. Example: {"nodeDataArray":[{"key":"a","text":"Start"},{"key":"b","text":"Process"}],"linkDataArray":[{"from":"a","to":"b"}]}';
+    const prompt = note.text;
+    const origFormat = note.format;
+    const origText = note.text;
+    const textEl = document.querySelector(`.draggable-note[data-id="${noteId}"] .draggable-note-text`);
+    if (textEl) {
+      textEl.innerHTML = `<div class="note-loading"><span class="note-loading-label">Converting to graph</span><span class="dots"><span></span><span></span><span></span></span></div>`;
+    }
+    const minDisplay = new Promise(r => setTimeout(r, 400));
+    try {
+      const [res] = await Promise.all([
+        fetch(LLM_ENDPOINT, {
+          method: 'POST',
+          headers: getLlmHeaders(),
+          body: JSON.stringify({ model: LLM_MODEL, messages: [{ role: 'system', content: sysMsg }, { role: 'user', content: prompt }], stream: false }),
+        }),
+        minDisplay,
+      ]);
+      if (!res.ok) { const t = await res.text().catch(() => ''); throw new Error(t || `HTTP ${res.status}`); }
+      const data = await res.json();
+      let reply = data.choices[0]?.message?.content || data.message?.content || data.response || JSON.stringify(data);
+      reply = reply.replace(/^```(?:json)?\s*\n?/i, '').replace(/\n?```\s*$/i, '').trim();
+      let graphData;
+      try { graphData = JSON.parse(reply); } catch { throw new Error('LLM returned invalid JSON'); }
+      if (!graphData.nodeDataArray) graphData = { nodeDataArray: [{ key: 1, text: 'Node' }], linkDataArray: [] };
+      if (!graphData.linkDataArray) graphData.linkDataArray = [];
+      note.format = 'graph';
+      note.text = JSON.stringify(graphData);
+      note.w = 320; note.h = 260;
+      saveCanvasData();
+      renderStickyNotes();
+      renderSidebar();
+      showToast('\uD83D\uDD17 Converted to Graph');
+    } catch (err) {
+      showToast('\u274C Graph conversion failed: ' + (err.message || 'Error'));
+      note.format = origFormat;
+      note.text = origText;
+      const el = document.querySelector(`.draggable-note[data-id="${noteId}"] .draggable-note-text`);
+      if (el) el.innerHTML = renderNoteContent(note);
+    }
+  }
+
   let apis = [];
   let currentApiId = null;
 
@@ -5358,6 +5404,7 @@ def greet(name):
       id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
       text: noteText,
       format: 'graph',
+      graphTemplate: templateName,
       z: getNextNoteZ(),
       color: getRandomColor(),
       tags: [],
@@ -5536,7 +5583,20 @@ def greet(name):
 
   const gojsDiagrams = new Map();
 
-  function makeGojsNodeTemplate() {
+  function isMindmapData(text) {
+    try {
+      const md = JSON.parse(text || '{}');
+      if (md.nodeDataArray && md.linkDataArray && md.nodeDataArray.length >= 3) {
+        const outCount = {};
+        md.linkDataArray.forEach(l => { const f = l.from; outCount[f] = (outCount[f] || 0) + 1; });
+        const maxOut = Math.max(...Object.values(outCount), 0);
+        return maxOut >= md.nodeDataArray.length * 0.4;
+      }
+    } catch {}
+    return false;
+  }
+
+  function makeGojsNodeTemplate(isMindmap) {
     if (typeof go === 'undefined') return null;
     const $ = go.GraphObject.make;
     function addChildNode(e, obj) {
@@ -5551,33 +5611,7 @@ def greet(name):
       diagram.model.addLinkData({ from: node.data.key, to: newKey });
       diagram.commitTransaction('add child');
     }
-    const addBtn = $(go.Panel, 'Spot',
-      {
-        cursor: 'pointer',
-        alignment: go.Spot.Right,
-        alignmentFocus: go.Spot.Center,
-        click: addChildNode,
-        mouseEnter: (e, obj) => { const bg = obj.findObject('ADD_BG'); if (bg) bg.fill = '#bbdefb'; },
-        mouseLeave: (e, obj) => { const bg = obj.findObject('ADD_BG'); if (bg) bg.fill = '#e3f2fd'; },
-      },
-      $(go.Shape, 'Circle',
-        {
-          name: 'ADD_BG',
-          desiredSize: new go.Size(22, 22),
-          fill: '#e3f2fd',
-          stroke: '#2196f3',
-          strokeWidth: 2,
-        }
-      ),
-      $(go.TextBlock, '+',
-        {
-          font: 'bold 15px sans-serif',
-          stroke: '#2196f3',
-        }
-      )
-    );
-    return $(go.Node, 'Spot',
-      { minSize: new go.Size(60, 30), margin: 4 },
+    const parts = [
       $(go.Panel, 'Auto',
         $(go.Shape, 'RoundedRectangle',
           { fill: '#e8ecf4', stroke: '#8e8e93', strokeWidth: 1.5, parameter1: 6 },
@@ -5587,7 +5621,39 @@ def greet(name):
           { margin: 8, font: '13px Poppins, sans-serif', textAlign: 'center', editable: true },
           new go.Binding('text', 'text').makeTwoWay())
       ),
-      addBtn
+    ];
+    if (isMindmap) {
+      parts.push($(go.Panel, 'Spot',
+        {
+          name: 'ADD_PANEL',
+          visible: false,
+          cursor: 'pointer',
+          alignment: go.Spot.Right,
+          alignmentFocus: go.Spot.Center,
+          click: addChildNode,
+          mouseEnter: (e, obj) => { const bg = obj.findObject('ADD_BG'); if (bg) bg.fill = '#bbdefb'; },
+          mouseLeave: (e, obj) => { const bg = obj.findObject('ADD_BG'); if (bg) bg.fill = '#e3f2fd'; },
+        },
+        $(go.Shape, 'Circle',
+          {
+            name: 'ADD_BG',
+            desiredSize: new go.Size(22, 22),
+            fill: '#e3f2fd',
+            stroke: '#2196f3',
+            strokeWidth: 2,
+          }
+        ),
+        $(go.TextBlock, '+',
+          {
+            font: 'bold 15px sans-serif',
+            stroke: '#2196f3',
+          }
+        )
+      ));
+    }
+    return $(go.Node, 'Spot',
+      { minSize: new go.Size(60, 30), margin: 4 },
+      ...parts
     );
   }
 
@@ -5629,7 +5695,8 @@ def greet(name):
         isReadOnly: false,
         layout: $(go.LayeredDigraphLayout, { direction: 0, layeringOption: 0 }),
       });
-      const nodeTempl = makeGojsNodeTemplate();
+      const isMindmap = note.graphTemplate === 'mindmap' || isMindmapData(note.text);
+      const nodeTempl = makeGojsNodeTemplate(isMindmap);
       if (nodeTempl) diagram.nodeTemplate = nodeTempl;
       const linkTempl = makeGojsLinkTemplate();
       if (linkTempl) diagram.linkTemplate = linkTempl;
@@ -5644,6 +5711,15 @@ def greet(name):
         linkDataArray: modelData.linkDataArray,
         linkFromPortIdProperty: null,
         linkToPortIdProperty: null,
+      });
+      diagram.addModelChangedListener(e => {
+        if (e.isTransactionFinished && e.model) {
+          const note = notes.find(n => n.id === noteId);
+          if (note) {
+            note.text = JSON.stringify({ nodeDataArray: e.model.nodeDataArray, linkDataArray: e.model.linkDataArray });
+            saveCanvasData();
+          }
+        }
       });
       gojsDiagrams.set(noteId, diagram);
     });
@@ -5661,14 +5737,13 @@ def greet(name):
       { fill: '#d6fff5', border: '#01a3a4' }, { fill: '#ffd6f0', border: '#f368e0' },
       { fill: '#ffd6d6', border: '#ee5a24' }, { fill: '#d6faff', border: '#0abde3' },
     ];
+    const p = palette[Math.floor(Math.random() * palette.length)];
     diag.startTransaction('restyle');
-    nodeData.forEach((n, i) => {
-      const p = palette[i % palette.length];
+    nodeData.forEach(n => {
       diag.model.setDataProperty(n, 'color', p.fill);
       diag.model.setDataProperty(n, 'bordercolor', p.border);
     });
-    const linkColor = palette[Math.floor(Math.random() * palette.length)].border;
-    linkData.forEach(l => diag.model.setDataProperty(l, 'color', linkColor));
+    linkData.forEach(l => diag.model.setDataProperty(l, 'color', p.border));
     diag.commitTransaction('restyle');
     const note = notes.find(n => n.id === noteId);
     if (note) {
@@ -7225,6 +7300,18 @@ def greet(name):
     if (note) {
       if (note.format === 'image') return;
       if (note.format === 'graph') {
+        const isMindmap = note.graphTemplate === 'mindmap' || isMindmapData(note.text);
+        if (isMindmap && textEl.classList.contains('editing')) {
+          const diag = gojsDiagrams.get(id);
+          if (diag) {
+            diag.nodes.each(n => { const p = n.findObject('ADD_PANEL'); if (p) p.visible = false; });
+            diag.requestUpdate();
+          }
+          textEl.classList.remove('editing', 'editing-plain');
+          const editBtn = noteEl.querySelector('.note-edit-btn');
+          if (editBtn) editBtn.classList.remove('editing');
+          return;
+        }
         const ta = textEl.querySelector('.gojs-source');
         if (ta) {
           try {
@@ -7269,6 +7356,18 @@ def greet(name):
       return;
     }
     if (note.format === 'graph') {
+      const isMindmap = note.graphTemplate === 'mindmap' || isMindmapData(note.text);
+      if (isMindmap) {
+        const diag = gojsDiagrams.get(id);
+        if (diag) {
+          diag.nodes.each(n => { const p = n.findObject('ADD_PANEL'); if (p) p.visible = true; });
+          diag.requestUpdate();
+          const editBtn = noteEl.querySelector('.note-edit-btn');
+          if (editBtn) editBtn.classList.add('editing');
+          textEl.classList.add('editing', 'editing-plain');
+          return;
+        }
+      }
       const container = textEl.querySelector('.gojs-container');
       const diag = gojsDiagrams.get(id);
       if (container && diag) {
@@ -7424,19 +7523,17 @@ def greet(name):
         }
         else if (nid && naction === 'graph') {
           const note = notes.find(n => n.id === nid);
-          if (note) {
+          if (note && note.text) {
+            doChatToGraph(nid);
+          } else if (note) {
             note.format = 'graph';
-            let graphData;
-            try { graphData = JSON.parse(note.text || '{}'); } catch { graphData = null; }
-            if (!graphData || !graphData.nodeDataArray) {
-              const tmpl = GRAPH_TEMPLATES.blank;
-              note.text = JSON.stringify({ nodeDataArray: tmpl.nodes, linkDataArray: tmpl.links });
-            }
+            const tmpl = GRAPH_TEMPLATES.blank;
+            note.text = JSON.stringify({ nodeDataArray: tmpl.nodes, linkDataArray: tmpl.links });
             note.w = 320; note.h = 260;
             saveCanvasData();
             renderStickyNotes();
             renderSidebar();
-            showToast('\uD83D\uDD17 Converted to Graph');
+            showToast('\uD83D\uDD17 Empty Graph');
           }
         }
         else if (nid && (naction === 'pin' || naction === 'unpin')) togglePinNote(nid);
