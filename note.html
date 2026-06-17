@@ -6,7 +6,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&family=Vazirmatn:wght@400;500;600;700&family=Lalezar&family=Markazi+Text:wght@400;500;600;700&family=Readex+Pro:wght@400;500;600;700&display=swap" rel="stylesheet"> 
   <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
-  <script src="go.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gojs@3.0.13/release/go.js"></script>
   <title>Command Palette</title>
   <style>
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
@@ -3044,6 +3044,13 @@
       background: var(--kbd-bg);
     }
 
+    .settings-toggle-track.on {
+      background: var(--accent) !important;
+    }
+    .settings-toggle-track.on > div {
+      transform: translateX(14px);
+    }
+
     .settings-input:hover,
     .settings-select:hover {
       border-color: var(--text-tertiary);
@@ -3878,10 +3885,17 @@
                   <option value="light">Light</option>
                   <option value="dark">Dark</option>
                 </select>
-              </div>
             </div>
           </div>
-          <div class="settings-tab-panel" id="tab-llm">
+          <div class="settings-row">
+            <label class="settings-label" for="settingsSnapToggle">Snap to Grid</label>
+            <div class="settings-input-wrapper">
+              <span class="settings-input-icon">⊞</span>
+              <div class="settings-toggle-track" id="settingsSnapToggle" role="switch" aria-checked="false" tabindex="0" style="flex-shrink:0;width:36px;height:22px;border-radius:11px;background:var(--text-tertiary);position:relative;transition:background 0.2s;cursor:pointer;display:inline-block;vertical-align:middle"><div style="position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;transition:transform 0.2s cubic-bezier(0.16,1,0.3,1);box-shadow:0 1px 3px rgba(0,0,0,0.15)"></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="settings-tab-panel" id="tab-llm">
             <div class="settings-row">
               <label class="settings-label" for="settingsLlmEndpoint">Server Address</label>
               <div class="settings-input-wrapper">
@@ -6083,6 +6097,10 @@ def greet(name):
     document.getElementById('settingsLlmEndpoint').value = LLM_ENDPOINT;
     document.getElementById('settingsLlmModel').value = LLM_MODEL;
     document.getElementById('settingsLlmApiKey').value = LLM_API_KEY;
+    const snapOn = localStorage.getItem('snapToGrid') === 'true';
+    const snapToggle = document.getElementById('settingsSnapToggle');
+    snapToggle.classList.toggle('on', snapOn);
+    snapToggle.setAttribute('aria-checked', snapOn);
     document.querySelector('.settings-tab-btn[data-tab="theme"]').click();
     overlay.classList.add('visible');
   }
@@ -6119,6 +6137,10 @@ def greet(name):
     }
     LLM_API_KEY = apiKey;
     localStorage.setItem('llm_api_key', apiKey);
+
+    const snapOn = document.getElementById('settingsSnapToggle').classList.contains('on');
+    localStorage.setItem('snapToGrid', snapOn);
+    SNAP_TO_GRID = snapOn;
 
     closeSettingsDialog();
     showToast('Settings saved');
@@ -6585,6 +6607,8 @@ def greet(name):
   let dragState = null;
   let dragPending = null;
   const DRAG_THRESHOLD = 5;
+  const GRID_SIZE = 10;
+  let SNAP_TO_GRID = false;
   let focusModeNoteId = null;
   let currentFindQuery = null;
 
@@ -6823,6 +6847,7 @@ def greet(name):
       <div class="context-menu-item" data-action="markdown" data-x="${cx}" data-y="${cy}"> New Markdown Note</div>
       <div class="context-menu-divider"></div>
       <div class="context-menu-item" data-action="auto-layout">Auto-Layout${activeCount ? ` (${activeCount} notes)` : ''}</div>
+      <div class="context-menu-item" data-action="snap">${SNAP_TO_GRID ? '☑' : '☐'} Snap to Grid</div>
       <div class="context-menu-divider"></div>
       <div class="context-menu-item" data-action="bg"> Change Background</div>
       <div class="context-menu-item" data-action="settings"> Settings</div>
@@ -6938,6 +6963,10 @@ def greet(name):
     if (!note.format || !['plain', 'markdown', 'image', 'mermaid', 'graph', 'chart'].includes(note.format)) {
       note.format = 'plain';
     }
+  }
+
+  function snapToGrid(val) {
+    return Math.round(val / GRID_SIZE) * GRID_SIZE;
   }
 
   function startNoteDrag(el, clientX, clientY) {
@@ -7142,8 +7171,14 @@ def greet(name):
     if (dragState.type === 'move') {
       const dx = e.clientX - dragState.startX;
       const dy = e.clientY - dragState.startY;
-      dragState.el.style.left = (dragState.origX + dx) + 'px';
-      dragState.el.style.top = (dragState.origY + dy) + 'px';
+      let newX = dragState.origX + dx;
+      let newY = dragState.origY + dy;
+      if (SNAP_TO_GRID) {
+        newX = snapToGrid(newX);
+        newY = snapToGrid(newY);
+      }
+      dragState.el.style.left = newX + 'px';
+      dragState.el.style.top = newY + 'px';
     } else if (dragState.type === 'resize') {
       const dw = e.clientX - dragState.startX;
       const dh = e.clientY - dragState.startY;
@@ -7164,6 +7199,12 @@ def greet(name):
         if (dir.includes('n')) newY = dragState.origY + dragState.origH - MIN_H;
         newH = MIN_H;
       }
+      if (SNAP_TO_GRID) {
+        newX = snapToGrid(newX);
+        newY = snapToGrid(newY);
+        newW = Math.max(MIN_W, snapToGrid(newW));
+        newH = Math.max(MIN_H, snapToGrid(newH));
+      }
       dragState.el.style.left = newX + 'px';
       dragState.el.style.top = newY + 'px';
       dragState.el.style.width = newW + 'px';
@@ -7178,11 +7219,27 @@ def greet(name):
     const id = dragState.el.dataset.id;
     const note = notes.find(n => n.id === id);
     if (note) {
-      note.x = parseFloat(dragState.el.style.left);
-      note.y = parseFloat(dragState.el.style.top);
+      let finalX = parseFloat(dragState.el.style.left);
+      let finalY = parseFloat(dragState.el.style.top);
+      if (SNAP_TO_GRID) {
+        finalX = snapToGrid(finalX);
+        finalY = snapToGrid(finalY);
+        dragState.el.style.left = finalX + 'px';
+        dragState.el.style.top = finalY + 'px';
+      }
+      note.x = finalX;
+      note.y = finalY;
       if (dragState.type === 'resize') {
-        note.w = parseFloat(dragState.el.style.width);
-        note.h = parseFloat(dragState.el.style.height);
+        let finalW = parseFloat(dragState.el.style.width);
+        let finalH = parseFloat(dragState.el.style.height);
+        if (SNAP_TO_GRID) {
+          finalW = Math.max(80, snapToGrid(finalW));
+          finalH = Math.max(50, snapToGrid(finalH));
+          dragState.el.style.width = finalW + 'px';
+          dragState.el.style.height = finalH + 'px';
+        }
+        note.w = finalW;
+        note.h = finalH;
         if (note.format === 'graph') {
           const diag = gojsDiagrams.get(id);
           if (diag) requestAnimationFrame(() => diag.requestUpdate());
@@ -7906,6 +7963,10 @@ def greet(name):
           setTimeout(() => openColorPalette(currentCanvasId), 150);
         } else if (action === 'auto-layout') {
           autoLayoutNotes();
+        } else if (action === 'snap') {
+          SNAP_TO_GRID = !SNAP_TO_GRID;
+          localStorage.setItem('snapToGrid', SNAP_TO_GRID);
+          showToast(`Snap to Grid ${SNAP_TO_GRID ? 'ON' : 'OFF'}`);
         } else if (action === 'settings') {
           openSettingsDialog();
         }
@@ -8204,6 +8265,7 @@ def greet(name):
     const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     if (isDark) applyTheme('dark');
   }
+  SNAP_TO_GRID = localStorage.getItem('snapToGrid') === 'true';
 
   document.getElementById('settingsToggleBtn').addEventListener('click', openSettingsDialog);
   document.getElementById('settingsDialogClose').addEventListener('click', closeSettingsDialog);
@@ -8217,6 +8279,17 @@ def greet(name):
     } else {
       input.type = 'password';
       e.currentTarget.textContent = '👁️';
+    }
+  });
+  document.getElementById('settingsSnapToggle').addEventListener('click', () => {
+    const t = document.getElementById('settingsSnapToggle');
+    const on = t.classList.toggle('on');
+    t.setAttribute('aria-checked', on);
+  });
+  document.getElementById('settingsSnapToggle').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      document.getElementById('settingsSnapToggle').click();
     }
   });
   document.querySelectorAll('.settings-tab-btn').forEach(btn => {
