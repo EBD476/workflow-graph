@@ -3814,6 +3814,9 @@
   <div class="chart-template-item" data-chart-template="area">Area</div>
   <div class="chart-template-item" data-chart-template="radar">Radar</div>
   <div class="chart-template-item" data-chart-template="scatter">Scatter</div>
+  <div class="chart-template-item" data-chart-template="gauge">Gauge</div>
+  <div class="chart-template-item" data-chart-template="treemap">Treemap</div>
+  <div class="chart-template-item" data-chart-template="heatmap">Heatmap</div>
 </div>
 
 <div class="overlay" id="overlay"></div>
@@ -3990,6 +3993,9 @@
     { id: 'chart-area',    title: 'Chart: Area',      subtitle: 'Area chart template',              icon: '\u2B25', color: '#91cc75', shortcut: [], action: () => createChartNote('area') },
     { id: 'chart-radar',   title: 'Chart: Radar',     subtitle: 'Radar chart template',             icon: '\u2B26', color: '#73c0de', shortcut: [], action: () => createChartNote('radar') },
     { id: 'chart-scatter', title: 'Chart: Scatter',   subtitle: 'Scatter chart template',           icon: '\u2756', color: '#ff9f43', shortcut: [], action: () => createChartNote('scatter') },
+    { id: 'chart-gauge',   title: 'Chart: Gauge',      subtitle: 'Gauge chart template',              icon: '\u2B24', color: '#ee6666', shortcut: [], action: () => createChartNote('gauge') },
+    { id: 'chart-treemap', title: 'Chart: Treemap',    subtitle: 'Treemap chart template',            icon: '\u25A3', color: '#91cc75', shortcut: [], action: () => createChartNote('treemap') },
+    { id: 'chart-heatmap', title: 'Chart: Heatmap',    subtitle: 'Heatmap chart template',            icon: '\u25A0', color: '#ff9f43', shortcut: [], action: () => createChartNote('heatmap') },
     { id: 'view-notes',  title: 'View Notes',         subtitle: 'Show all sticky notes',          icon: '\uD83D\uDCCC', color: '#5ac8fa', shortcut: [], action: () => openSidebar('notes') },
     { id: 'clear-notes', title: 'Clear All Notes',    subtitle: 'Remove all sticky notes',        icon: '\u267B', color: '#ff3b30', shortcut: [], action: clearAllNotes },
     { id: 'new-canvas',  title: 'New Canvas',          subtitle: 'Create a new canvas',            icon: '+', color: '#5ac8fa', shortcut: [], action: () => addCanvas(prompt('Canvas name:', 'Canvas ' + (canvases.length + 1)) || '') },
@@ -4139,6 +4145,59 @@ def greet(name):
           symbolSize: 8,
         }],
         color: ['#5470c6'],
+      }
+    },
+    gauge: {
+      label: 'Gauge Chart',
+      option: {
+        tooltip: { formatter: '{a} <br/>{b} : {c}%' },
+        series: [{
+          type: 'gauge',
+          detail: { formatter: '{value}%' },
+          data: [{ value: 70, name: 'Progress' }],
+          axisLabel: { fontSize: 10 },
+        }],
+        color: ['#5470c6'],
+      }
+    },
+    treemap: {
+      label: 'Treemap Chart',
+      option: {
+        tooltip: { trigger: 'item', formatter: '{b}: {c}' },
+        series: [{
+          type: 'treemap',
+          roam: false,
+          data: [
+            { name: 'Product A', value: 120 },
+            { name: 'Product B', value: 80 },
+            { name: 'Product C', value: 60 },
+            { name: 'Product D', value: 40 },
+            { name: 'Product E', value: 30 },
+          ],
+          label: { fontSize: 10 },
+        }],
+        color: ['#5470c6', '#91cc75', '#fac858', '#ee6666', '#73c0de'],
+      }
+    },
+    heatmap: {
+      label: 'Heatmap Chart',
+      option: {
+        tooltip: { position: 'top' },
+        grid: { left: '12%', right: '8%', bottom: '20%', top: '8%', containLabel: true },
+        xAxis: { type: 'category', data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'], axisLabel: { fontSize: 10 } },
+        yAxis: { type: 'category', data: ['Morning', 'Afternoon', 'Evening'], axisLabel: { fontSize: 10 } },
+        visualMap: { min: 0, max: 100, calculable: false, orient: 'horizontal', left: 'center', bottom: 0, inRange: { color: ['#e0f3f8', '#abd9e9', '#74add1', '#4575b4', '#313695'] } },
+        series: [{
+          type: 'heatmap',
+          data: [
+            [0, 0, 30], [0, 1, 80], [0, 2, 45],
+            [1, 0, 60], [1, 1, 20], [1, 2, 90],
+            [2, 0, 40], [2, 1, 70], [2, 2, 10],
+            [3, 0, 85], [3, 1, 35], [3, 2, 55],
+            [4, 0, 15], [4, 1, 65], [4, 2, 75],
+          ],
+          label: { fontSize: 9, show: true },
+        }],
       }
     },
   };
