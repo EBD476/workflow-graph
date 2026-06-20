@@ -4003,6 +4003,9 @@
     { id: 'archive-note',  title: 'Archive Note',        subtitle: 'Archive the focused or latest note',  icon: '\uD83D\uDCE4', color: '#8e8e93', shortcut: [], action: () => { const a = notes.filter(n => !n.archived); if (a.length) archiveNote(a[0].id); } },
     { id: 'duplicate-note',title: 'Duplicate Note',      subtitle: 'Duplicate the latest note',          icon: '\uD83D\uDCCB', color: '#ff9500', shortcut: [], action: () => { const a = notes.filter(n => !n.archived); if (a.length) duplicateNote(a[0].id); } },
     { id: 'auto-layout',   title: 'Auto-Layout Notes',   subtitle: 'Auto-arrange all notes in a grid',   icon: '\uD83D\uDCC4', color: '#5ac8fa', shortcut: [], action: autoLayoutNotes },
+    { id: 'share-canvas',  title: 'Share Canvas',         subtitle: 'Copy a shareable link of this canvas', icon: '\uD83D\uDD17', color: '#30d158', shortcut: [], action: shareCanvas },
+    { id: 'export-canvas', title: 'Export Canvas to File', subtitle: 'Download current canvas as a file',    icon: '\uD83D\uDCE4', color: '#ff9f43', shortcut: [], action: exportCanvasToFile },
+    { id: 'restore-canvas',title: 'Restore Canvas from File',subtitle: 'Import a canvas from a .json file',   icon: '\uD83D\uDCC2', color: '#5ac8fa', shortcut: [], action: restoreCanvasFromFile },
   ];
 
   const noteColors = ['yellow', 'green', 'blue', 'pink', 'lavender', 'peach', 'mint', 'coral'];
@@ -6894,6 +6897,114 @@ def greet(name):
     }
   }
 
+  function shareCanvas() {
+    const canvas = getCurrentCanvas();
+    if (!canvas || !canvas.notes || canvas.notes.length === 0) {
+      showToast('\u26A0\uFE0F No notes to share');
+      return;
+    }
+    const data = JSON.stringify({ version: 1, exportedAt: new Date().toISOString(), canvases: [{ ...canvas, notes: canvas.notes.map(n => ({ ...n })) }], currentCanvasId: canvas.id });
+    const encoded = encodeURIComponent(data);
+    const url = window.location.href.split('#')[0] + '#share=' + encoded;
+    const ta = document.createElement('textarea');
+    ta.value = url;
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    try {
+      document.execCommand('copy');
+      showToast('\uD83D\uDD17 Share link copied to clipboard');
+    } catch {
+      navigator.clipboard.writeText(url).then(() => {
+        showToast('\uD83D\uDD17 Share link copied to clipboard');
+      }).catch(() => {
+        showToast('\u26A0\uFE0F Failed to copy link');
+      });
+    }
+    document.body.removeChild(ta);
+  }
+
+  function checkSharedUrl() {
+    const hash = window.location.hash;
+    if (!hash || !hash.startsWith('#share=')) return;
+    let data;
+    try {
+      data = JSON.parse(decodeURIComponent(hash.slice('#share='.length)));
+    } catch { return; }
+    if (!data.canvases || !data.canvases.length) return;
+    history.replaceState(null, '', window.location.pathname + window.location.search);
+    const shared = data.canvases[0];
+    showConfirmDialog({
+      title: '\uD83D\uDCE5 Import Shared Canvas',
+      message: `Import canvas "<strong>${escapeHtml(shared.name)}</strong>" with ${shared.notes.length} note${shared.notes.length !== 1 ? 's' : ''}?`,
+      confirmLabel: 'Import'
+    }).then(confirmed => {
+      if (!confirmed) return;
+      const id = 'canvas_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 4);
+      const canvas = { ...shared, id };
+      canvas.notes = (shared.notes || []).map(n => ({
+        ...n,
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6) + Math.random().toString(36).slice(2, 4),
+      }));
+      canvases.push(canvas);
+      switchCanvas(canvas.id);
+      showToast(`\uD83D\uDCE5 Imported "${canvas.name}"`);
+    });
+  }
+
+  function exportCanvasToFile() {
+    const canvas = getCurrentCanvas();
+    if (!canvas || !canvas.notes || canvas.notes.length === 0) {
+      showToast('\u26A0\uFE0F No notes to export');
+      return;
+    }
+    const data = JSON.stringify({ version: 1, exportedAt: new Date().toISOString(), canvas }, null, 2);
+    const name = canvas.name.replace(/[^a-zA-Z0-9 _-]/g, '').trim() || 'canvas';
+    const date = new Date().toISOString().slice(0, 10);
+    downloadFile(data, `${date}_${name}.canvas.json`, 'application/json;charset=utf-8');
+    showToast(`\uD83D\uDCE4 Exported "${canvas.name}" to file`);
+  }
+
+  function restoreCanvasFromFile() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json,.canvas.json';
+    input.style.display = 'none';
+    input.addEventListener('change', () => {
+      const file = input.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        let data;
+        try {
+          data = JSON.parse(e.target.result);
+        } catch {
+          showToast('\u26A0\uFE0F Invalid JSON file');
+          return;
+        }
+        const shared = data.canvas || data;
+        if (!shared || typeof shared !== 'object') {
+          showToast('\u26A0\uFE0F No canvas data found in file');
+          return;
+        }
+        const id = 'canvas_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 4);
+        const canvas = { ...shared, id };
+        canvas.notes = (shared.notes || []).map(n => ({
+          ...n,
+          id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6) + Math.random().toString(36).slice(2, 4),
+        }));
+        canvases.push(canvas);
+        switchCanvas(canvas.id);
+        showToast(`\uD83D\uDCC2 Restored "${canvas.name}" from file`);
+      };
+      reader.readAsText(file);
+    });
+    document.body.appendChild(input);
+    input.click();
+    setTimeout(() => document.body.removeChild(input), 1000);
+  }
+
   function showContextMenu(e) {
     e.preventDefault();
     closeContextMenu();
@@ -6906,7 +7017,11 @@ def greet(name):
       <div class="context-menu-item" data-action="markdown" data-x="${cx}" data-y="${cy}"> New Markdown Note</div>
       <div class="context-menu-divider"></div>
       <div class="context-menu-item" data-action="auto-layout">Auto-Layout${activeCount ? ` (${activeCount} notes)` : ''}</div>
-      <div class="context-menu-item" data-action="snap">${SNAP_TO_GRID ? '☑' : '☐'} Snap to Grid</div>
+      <div class="context-menu-item" data-action="snap" style="font-weight: ${SNAP_TO_GRID ? 'bold' : 'normal'};"> Snap to Grid</div>
+      <div class="context-menu-divider"></div>
+      <div class="context-menu-item" data-action="export">Export Canvas to File</div> <!--\uD83D\uDCE4  -->
+      <div class="context-menu-item" data-action="restore"> Restore Canvas from File</div> <!-- \uD83D\uDCC2 -->
+      <div class="context-menu-item" data-action="share"> Share Canvas</div> <!-- \uD83D\uDD17 -->
       <div class="context-menu-divider"></div>
       <div class="context-menu-item" data-action="bg"> Change Background</div>
       <div class="context-menu-item" data-action="settings"> Settings</div>
@@ -8026,6 +8141,12 @@ def greet(name):
           SNAP_TO_GRID = !SNAP_TO_GRID;
           localStorage.setItem('snapToGrid', SNAP_TO_GRID);
           showToast(`Snap to Grid ${SNAP_TO_GRID ? 'ON' : 'OFF'}`);
+        } else if (action === 'export') {
+          exportCanvasToFile();
+        } else if (action === 'restore') {
+          restoreCanvasFromFile();
+        } else if (action === 'share') {
+          shareCanvas();
         } else if (action === 'settings') {
           openSettingsDialog();
         }
@@ -8325,6 +8446,7 @@ def greet(name):
     if (isDark) applyTheme('dark');
   }
   SNAP_TO_GRID = localStorage.getItem('snapToGrid') === 'true';
+  setTimeout(checkSharedUrl, 300);
 
   document.getElementById('settingsToggleBtn').addEventListener('click', openSettingsDialog);
   document.getElementById('settingsDialogClose').addEventListener('click', closeSettingsDialog);
