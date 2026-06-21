@@ -3863,6 +3863,16 @@
     .zoom-btn[data-zoom="reset"]:hover {
       background: color-mix(in srgb, var(--accent) 12%, transparent);
     }
+    .zoom-btn.active {
+      background: var(--accent);
+      color: #fff;
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 30%, transparent);
+    }
+    .zoom-btn.active:hover {
+      background: var(--accent);
+      color: #fff;
+      filter: brightness(1.1);
+    }
     .zoom-level {
       font-size: 11px;
       font-weight: 700;
@@ -3878,6 +3888,24 @@
     .zoom-controls:hover .zoom-level {
       color: var(--text-secondary);
     }
+
+    .zoom-controls-divider {
+      width: 1px;
+      height: 18px;
+      background: var(--surface-border);
+      opacity: 0.5;
+      margin: 0 2px;
+    }
+
+    body.pan-mode .draggable-note {
+      pointer-events: none !important;
+    }
+    body.pan-mode .canvas-viewport {
+      cursor: grab;
+    }
+    body.pan-mode .canvas-viewport.panning {
+      cursor: grabbing;
+    }
   </style>
 </head>
 <body>
@@ -3886,6 +3914,8 @@
 <div class="canvas-viewport" id="canvasViewport"></div>
 
 <div class="zoom-controls" id="zoomControls">
+  <button class="zoom-btn" data-zoom="pan" id="panToggleBtn" title="Pan mode (drag to move canvas)">✋</button>
+  <span class="zoom-controls-divider"></span>
   <button class="zoom-btn" data-zoom="reset" title="Reset zoom (100%)">⟲</button>
   <button class="zoom-btn" data-zoom="out" title="Zoom out">−</button>
   <span class="zoom-level" id="zoomLevelDisplay">100%</span>
@@ -6797,6 +6827,7 @@ def greet(name):
   let canvasPanY = 0;
   let canvasZoom = 1;
   let isPanning = false;
+  let panMode = false;
   let panStartX = 0;
   let panStartY = 0;
   let panStartPanX = 0;
@@ -6807,10 +6838,16 @@ def greet(name):
   }
 
   function applyCanvasTransform() {
-    const vp = getCanvasViewport();
-    if (vp) {
-      vp.style.transform = `translate(${canvasPanX}px, ${canvasPanY}px) scale(${canvasZoom})`;
-    }
+    document.querySelectorAll('.draggable-note').forEach(el => {
+      const id = el.dataset.id;
+      const note = notes.find(n => n.id === id);
+      if (note) {
+        el.style.left = ((note.x || 0) * canvasZoom + canvasPanX) + 'px';
+        el.style.top = ((note.y || 0) * canvasZoom + canvasPanY) + 'px';
+        el.style.width = ((note.w || 220) * canvasZoom) + 'px';
+        el.style.height = ((note.h || 180) * canvasZoom) + 'px';
+      }
+    });
     updateZoomDisplay();
   }
 
@@ -6895,6 +6932,7 @@ def greet(name):
   const DRAG_THRESHOLD = 5;
 
   let SNAP_TO_GRID = false;
+  const GRID_SIZE = 10;
   let focusModeNoteId = null;
   let currentFindQuery = null;
 
@@ -7248,9 +7286,9 @@ def greet(name):
       <div class="context-menu-item" data-action="restore"> Restore Canvas </div> <!-- \uD83D\uDCC2 -->
       <div class="context-menu-item" data-action="share"> Share Canvas</div> <!-- \uD83D\uDD17 -->
       <div class="context-menu-divider"></div>
-      <div class="context-menu-divider"></div>
-      <div class="context-menu-item" data-action="zoom-in">Zoom In (${Math.round(canvasZoom * 100)}%)</div>
-      <div class="context-menu-item" data-action="zoom-out"> Zoom Out</div>
+      <div class="context-menu-item" data-action="pan-toggle" style="font-weight: ${panMode ? 'bold' : 'normal'};"> Pan Mode</div>
+      <!--<div class="context-menu-item" data-action="zoom-in">Zoom In (${Math.round(canvasZoom * 100)}%)</div>-->
+      <!--<div class="context-menu-item" data-action="zoom-out"> Zoom Out</div> -->
       <div class="context-menu-item" data-action="zoom-reset">Reset Zoom</div>
       <div class="context-menu-item" data-action="zoom-fit">Zoom to Fit Notes</div>
       <div class="context-menu-divider"></div>
@@ -7376,14 +7414,15 @@ def greet(name):
 
   function startNoteDrag(el, clientX, clientY) {
     bringNoteToFront(el);
-    const vpPos = screenToCanvas(clientX, clientY);
+    const id = el.dataset.id;
+    const note = notes.find(n => n.id === id);
+    if (!note) return;
     dragState = {
-      type: 'move',
-      el,
+      type: 'move', el, note,
       startX: clientX,
       startY: clientY,
-      origX: parseFloat(el.style.left) || 0,
-      origY: parseFloat(el.style.top) || 0,
+      origCanvasX: note.x || 0,
+      origCanvasY: note.y || 0,
     };
     el.classList.add('dragging');
   }
@@ -7400,10 +7439,10 @@ def greet(name):
       el.className = `draggable-note draggable-note-color-${n.color}`;
       el.dataset.id = n.id;
       el.dataset.format = n.format;
-      el.style.left = n.x + 'px';
-      el.style.top = n.y + 'px';
-      el.style.width = (n.w || 220) + 'px';
-      el.style.height = (n.h || 180) + 'px';
+      el.style.left = ((n.x || 0) * canvasZoom + canvasPanX) + 'px';
+      el.style.top = ((n.y || 0) * canvasZoom + canvasPanY) + 'px';
+      el.style.width = ((n.w || 220) * canvasZoom) + 'px';
+      el.style.height = ((n.h || 180) * canvasZoom) + 'px';
       el.style.zIndex = String(n.z || 60);
       el.style.setProperty('--note-scroll-thumb', darkenColor(n.color, 0.35));
       el.style.animationDelay = (i * 0.06) + 's';
@@ -7431,17 +7470,8 @@ def greet(name):
         if (e.target.closest('.draggable-note-text.editing')) return;
         if (e.target.closest('.gojs-container') || e.target.closest('canvas') || e.target.closest('.gojs-source') || e.target.closest('.chart-container') || e.target.closest('.chart-note-wrap')) return;
         if (e.button !== 0) return;
-
-        const vpPos = screenToCanvas(e.clientX, e.clientY);
-        dragPending = {
-          el,
-          startX: e.clientX,
-          startY: e.clientY,
-          origVpX: vpPos.x,
-          origVpY: vpPos.y,
-          viewportOrigX: parseFloat(el.style.left) || 0,
-          viewportOrigY: parseFloat(el.style.top) || 0,
-        };
+        e.preventDefault();
+        startNoteDrag(el, e.clientX, e.clientY);
       });
 
       el.querySelectorAll('.note-resize-handle').forEach(h => {
@@ -7449,13 +7479,16 @@ def greet(name):
           e.preventDefault();
           e.stopPropagation();
           bringNoteToFront(el);
-          const rect = el.getBoundingClientRect();
-          const vpPos = screenToCanvas(rect.left, rect.top);
+          const id = el.dataset.id;
+          const note = notes.find(n => n.id === id);
+          if (!note) return;
           dragState = {
-            type: 'resize', dir: h.dataset.dir, el,
+            type: 'resize', dir: h.dataset.dir, el, note,
             startX: e.clientX, startY: e.clientY,
-            origW: rect.width / canvasZoom, origH: rect.height / canvasZoom,
-            origX: vpPos.x, origY: vpPos.y,
+            origW: note.w || 220,
+            origH: note.h || 180,
+            origX: note.x,
+            origY: note.y,
           };
           el.classList.add('resizing');
         });
@@ -7566,9 +7599,7 @@ def greet(name):
         });
       }
 
-      const vp = getCanvasViewport();
-      if (vp) vp.appendChild(el);
-      else document.body.appendChild(el);
+      document.body.appendChild(el);
     });
     renderMermaidDiagrams();
     initGojsDiagrams();
@@ -7576,26 +7607,17 @@ def greet(name):
   }
 
   document.addEventListener('mousemove', (e) => {
-    if (dragPending && !dragState) {
-      const dx = e.clientX - dragPending.startX;
-      const dy = e.clientY - dragPending.startY;
-      if (Math.hypot(dx, dy) >= DRAG_THRESHOLD) {
-        startNoteDrag(dragPending.el, dragPending.startX, dragPending.startY);
-        clearDragPending();
-      }
-    }
+    clearDragPending();
     if (!dragState) return;
     if (dragState.type === 'move') {
       const dx = (e.clientX - dragState.startX) / canvasZoom;
       const dy = (e.clientY - dragState.startY) / canvasZoom;
-      let newX = dragState.origX + dx;
-      let newY = dragState.origY + dy;
-      if (SNAP_TO_GRID) {
-        newX = snapToGrid(newX);
-        newY = snapToGrid(newY);
-      }
-      dragState.el.style.left = newX + 'px';
-      dragState.el.style.top = newY + 'px';
+      const newX = dragState.origCanvasX + dx;
+      const newY = dragState.origCanvasY + dy;
+      dragState.note.x = newX;
+      dragState.note.y = newY;
+      dragState.el.style.left = (newX * canvasZoom + canvasPanX) + 'px';
+      dragState.el.style.top = (newY * canvasZoom + canvasPanY) + 'px';
     } else if (dragState.type === 'resize') {
       const dw = (e.clientX - dragState.startX) / canvasZoom;
       const dh = (e.clientY - dragState.startY) / canvasZoom;
@@ -7616,16 +7638,14 @@ def greet(name):
         if (dir.includes('n')) newY = dragState.origY + dragState.origH - MIN_H;
         newH = MIN_H;
       }
-      if (SNAP_TO_GRID) {
-        newX = snapToGrid(newX);
-        newY = snapToGrid(newY);
-        newW = Math.max(MIN_W, snapToGrid(newW));
-        newH = Math.max(MIN_H, snapToGrid(newH));
-      }
-      dragState.el.style.left = newX + 'px';
-      dragState.el.style.top = newY + 'px';
-      dragState.el.style.width = newW + 'px';
-      dragState.el.style.height = newH + 'px';
+      dragState.el.style.left = (newX * canvasZoom + canvasPanX) + 'px';
+      dragState.el.style.top = (newY * canvasZoom + canvasPanY) + 'px';
+      dragState.el.style.width = (newW * canvasZoom) + 'px';
+      dragState.el.style.height = (newH * canvasZoom) + 'px';
+      dragState.note.x = newX;
+      dragState.note.y = newY;
+      dragState.note.w = newW;
+      dragState.note.h = newH;
     }
   });
 
@@ -7633,41 +7653,35 @@ def greet(name):
     clearDragPending();
     if (!dragState) return;
     dragState.el.classList.remove('dragging', 'resizing');
-    const id = dragState.el.dataset.id;
-    const note = notes.find(n => n.id === id);
-    if (note) {
-      let finalX = parseFloat(dragState.el.style.left);
-      let finalY = parseFloat(dragState.el.style.top);
-      if (SNAP_TO_GRID) {
-        finalX = snapToGrid(finalX);
-        finalY = snapToGrid(finalY);
-        dragState.el.style.left = finalX + 'px';
-        dragState.el.style.top = finalY + 'px';
-      }
-      note.x = finalX;
-      note.y = finalY;
-      if (dragState.type === 'resize') {
-        let finalW = parseFloat(dragState.el.style.width);
-        let finalH = parseFloat(dragState.el.style.height);
+    const note = dragState.note;
+    try {
+      if (note) {
         if (SNAP_TO_GRID) {
-          finalW = Math.max(80, snapToGrid(finalW));
-          finalH = Math.max(50, snapToGrid(finalH));
-          dragState.el.style.width = finalW + 'px';
-          dragState.el.style.height = finalH + 'px';
+          note.x = snapToGrid(note.x);
+          note.y = snapToGrid(note.y);
+          dragState.el.style.left = (note.x * canvasZoom + canvasPanX) + 'px';
+          dragState.el.style.top = (note.y * canvasZoom + canvasPanY) + 'px';
+          if (dragState.type === 'resize') {
+            note.w = Math.max(80, snapToGrid(note.w));
+            note.h = Math.max(50, snapToGrid(note.h));
+            dragState.el.style.width = (note.w * canvasZoom) + 'px';
+            dragState.el.style.height = (note.h * canvasZoom) + 'px';
+          }
         }
-        note.w = finalW;
-        note.h = finalH;
-        if (note.format === 'graph') {
-          const diag = gojsDiagrams.get(id);
-          if (diag) requestAnimationFrame(() => diag.requestUpdate());
+        if (dragState.type === 'resize') {
+          if (note.format === 'graph') {
+            const diag = gojsDiagrams.get(note.id);
+            if (diag) requestAnimationFrame(() => diag.requestUpdate());
+          }
+          if (note.format === 'chart') {
+            requestAnimationFrame(() => resizeEChart(note.id));
+          }
         }
-        if (note.format === 'chart') {
-          requestAnimationFrame(() => resizeEChart(id));
-        }
+        saveCanvasData();
       }
-      saveCanvasData();
+    } finally {
+      dragState = null;
     }
-    dragState = null;
   });
 
   function openSearch() {
@@ -8375,6 +8389,12 @@ def greet(name):
           const y = parseInt(item.dataset.y) - 20;
           const format = action === 'markdown' ? 'markdown' : 'plain';
           createNote(null, { format, startEditing: true, x, y });
+        } else if (action === 'pan-toggle') {
+          panMode = !panMode;
+          document.body.classList.toggle('pan-mode', panMode);
+          const panBtn = document.querySelector('.zoom-btn[data-zoom="pan"]');
+          if (panBtn) panBtn.classList.toggle('active', panMode);
+          if (!panMode && isPanning) stopCanvasPan();
         } else if (action === 'zoom-in') {
           zoomAtPoint(canvasZoom * 1.25, window.innerWidth / 2, window.innerHeight / 2);
           showZoomControls();
@@ -8752,6 +8772,7 @@ def greet(name):
     canvasViewport.addEventListener('mousedown', (e) => {
       if (e.target !== canvasViewport) return;
       if (e.button !== 0) return;
+      if (!panMode) return;
       e.preventDefault();
       startCanvasPan(e.clientX, e.clientY);
     });
@@ -8798,7 +8819,14 @@ def greet(name):
     const btn = e.target.closest('.zoom-btn');
     if (!btn) return;
     const action = btn.dataset.zoom;
-    if (action === 'in') {
+    if (action === 'pan') {
+      panMode = !panMode;
+      btn.classList.toggle('active', panMode);
+      document.body.classList.toggle('pan-mode', panMode);
+      if (!panMode) {
+        if (isPanning) stopCanvasPan();
+      }
+    } else if (action === 'in') {
       zoomAtPoint(canvasZoom * 1.25, window.innerWidth / 2, window.innerHeight / 2);
     } else if (action === 'out') {
       zoomAtPoint(canvasZoom * 0.8, window.innerWidth / 2, window.innerHeight / 2);
