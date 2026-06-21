@@ -869,7 +869,7 @@
       display: flex;
       align-items: center;
       gap: 12px;
-      padding: 8px 20px;
+      padding: 3px 20px;
       cursor: pointer;
       transition: background 0.12s;
       border-bottom: 0.5px solid var(--divider);
@@ -1288,6 +1288,32 @@
     }
 
     .canvas-rename-btn:hover {
+      background: var(--accent-alpha);
+      color: var(--accent);
+    }
+
+    .canvas-export-btn {
+      flex-shrink: 0;
+      width: 20px;
+      height: 20px;
+      border: none;
+      border-radius: 50%;
+      background: transparent;
+      color: var(--text-tertiary);
+      font-size: 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.12s, background 0.12s, color 0.12s;
+      line-height: 1;
+      margin-right: 2px;
+    }
+    .canvas-item:hover .canvas-export-btn {
+      opacity: 1;
+    }
+    .canvas-export-btn:hover {
       background: var(--accent-alpha);
       color: var(--accent);
     }
@@ -6383,6 +6409,7 @@ def greet(name):
         html +=   `<div class="canvas-color-btn" data-color-id="${c.id}" title="Change background" style="background:${c.bg || '#171f49'}">${safeName.charAt(0).toUpperCase()}</div>`;
         html +=   `<span class="canvas-name">${safeName}</span>`;
         html +=   `<button class="canvas-rename-btn" data-rename-id="${c.id}" title="Rename canvas">✎</button>`;
+        html +=   `<button class="canvas-export-btn" data-export-id="${c.id}" title="Export canvas to file">⬇</button>`;
         html +=   `<span class="canvas-count">${noteCount}</span>`;
         if (canvases.length > 1) {
           html +=   `<button class="canvas-delete-btn" data-canvas-id="${c.id}" title="Delete canvas">\u2715</button>`;
@@ -7020,7 +7047,7 @@ def greet(name):
       <div class="context-menu-item" data-action="snap" style="font-weight: ${SNAP_TO_GRID ? 'bold' : 'normal'};"> Snap to Grid</div>
       <div class="context-menu-divider"></div>
       <div class="context-menu-item" data-action="export">Export Canvas to File</div> <!--\uD83D\uDCE4  -->
-      <div class="context-menu-item" data-action="restore"> Restore Canvas from File</div> <!-- \uD83D\uDCC2 -->
+      <div class="context-menu-item" data-action="restore"> Restore Canvas </div> <!-- \uD83D\uDCC2 -->
       <div class="context-menu-item" data-action="share"> Share Canvas</div> <!-- \uD83D\uDD17 -->
       <div class="context-menu-divider"></div>
       <div class="context-menu-item" data-action="bg"> Change Background</div>
@@ -8230,6 +8257,20 @@ def greet(name):
       }
       return;
     }
+    const exportCanvasBtn = e.target.closest('.canvas-export-btn');
+    if (exportCanvasBtn && exportCanvasBtn.dataset.exportId) {
+      const canvas = getCanvasRef(exportCanvasBtn.dataset.exportId);
+      if (canvas && canvas.notes && canvas.notes.length) {
+        const data = JSON.stringify({ version: 1, exportedAt: new Date().toISOString(), canvas }, null, 2);
+        const name = canvas.name.replace(/[^a-zA-Z0-9 _-]/g, '').trim() || 'canvas';
+        const date = new Date().toISOString().slice(0, 10);
+        downloadFile(data, `${date}_${name}.canvas.json`, 'application/json;charset=utf-8');
+        showToast(`\uD83D\uDCE4 Exported "${canvas.name}"`);
+      } else {
+        showToast('\u26A0\uFE0F No notes to export');
+      }
+      return;
+    }
     const restoreBtn = e.target.closest('[data-restore-id]');
     if (restoreBtn && restoreBtn.dataset.restoreId) {
       restoreNote(restoreBtn.dataset.restoreId);
@@ -8238,6 +8279,14 @@ def greet(name):
     const deleteSidebar = e.target.closest('.item-delete-sidebar');
     if (deleteSidebar && deleteSidebar.dataset.deleteId) {
       requestDeleteNote(deleteSidebar.dataset.deleteId);
+      return;
+    }
+    const sidebarAction = e.target.closest('[data-sidebar-action]');
+    if (sidebarAction) {
+      const action = sidebarAction.dataset.sidebarAction;
+      if (action === 'export') exportCanvasToFile();
+      else if (action === 'restore') restoreCanvasFromFile();
+      else if (action === 'share') shareCanvas();
       return;
     }
     const focusBtn = e.target.closest('.note-focus-btn');
