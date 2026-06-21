@@ -3788,10 +3788,109 @@
       text-transform: uppercase;
       letter-spacing: 0.04em;
     }
+
+    .canvas-viewport {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      transform-origin: 0 0;
+      cursor: grab;
+    }
+    .canvas-viewport > * {
+      pointer-events: auto;
+    }
+    .canvas-viewport.panning {
+      cursor: grabbing;
+    }
+    .canvas-viewport.panning > * {
+      pointer-events: none !important;
+    }
+
+    .zoom-controls {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      translate: -50% 0;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 2px;
+      z-index: 998;
+      background: color-mix(in srgb, var(--surface) 88%, transparent);
+      backdrop-filter: blur(32px) saturate(1.4);
+      -webkit-backdrop-filter: blur(32px) saturate(1.4);
+      border-radius: 999px;
+      border: 0.5px solid var(--surface-border);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.04);
+      padding: 4px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      transform: translateY(8px);
+    }
+    .zoom-controls.visible {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0);
+    }
+    .zoom-btn {
+      width: 32px;
+      height: 32px;
+      border: none;
+      border-radius: 999px;
+      background: transparent;
+      color: var(--text-secondary);
+      font-size: 18px;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s, color 0.15s, transform 0.15s;
+      line-height: 1;
+      position: relative;
+    }
+    .zoom-btn:hover {
+      background: var(--accent-alpha);
+      color: var(--accent);
+    }
+    .zoom-btn:active {
+      transform: scale(0.88);
+    }
+    .zoom-btn[data-zoom="reset"]:hover {
+      background: color-mix(in srgb, var(--accent) 12%, transparent);
+    }
+    .zoom-level {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-tertiary);
+      letter-spacing: 0.03em;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+      min-width: 40px;
+      user-select: none;
+      padding: 0 4px;
+      transition: color 0.2s;
+    }
+    .zoom-controls:hover .zoom-level {
+      color: var(--text-secondary);
+    }
   </style>
 </head>
 <body>
 <div class="random-bg" id="random-bg"></div>
+
+<div class="canvas-viewport" id="canvasViewport"></div>
+
+<div class="zoom-controls" id="zoomControls">
+  <button class="zoom-btn" data-zoom="reset" title="Reset zoom (100%)">⟲</button>
+  <button class="zoom-btn" data-zoom="out" title="Zoom out">−</button>
+  <span class="zoom-level" id="zoomLevelDisplay">100%</span>
+  <button class="zoom-btn" data-zoom="in" title="Zoom in">+</button>
+</div>
 
 <button class="fab-btn stats-btn" id="statsToggleBtn" title="Stats dashboard">
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="12" width="4" height="8" rx="1"/><rect x="10" y="8" width="4" height="12" rx="1"/><rect x="16" y="4" width="4" height="16" rx="1"/></svg>
@@ -5254,6 +5353,7 @@ def greet(name):
     currentCanvasId = id;
     notes = c.notes;
     if (c.bg) applyCanvasBg(c.bg);
+    initCanvasTransform();
     saveCanvasData();
     renderStickyNotes();
     renderSidebar();
@@ -6693,10 +6793,107 @@ def greet(name):
     return result || '<span style="opacity:0.35">Empty</span>';
   }
 
+  let canvasPanX = 0;
+  let canvasPanY = 0;
+  let canvasZoom = 1;
+  let isPanning = false;
+  let panStartX = 0;
+  let panStartY = 0;
+  let panStartPanX = 0;
+  let panStartPanY = 0;
+
+  function getCanvasViewport() {
+    return document.getElementById('canvasViewport');
+  }
+
+  function applyCanvasTransform() {
+    const vp = getCanvasViewport();
+    if (vp) {
+      vp.style.transform = `translate(${canvasPanX}px, ${canvasPanY}px) scale(${canvasZoom})`;
+    }
+    updateZoomDisplay();
+  }
+
+  function screenToCanvas(sx, sy) {
+    return {
+      x: (sx - canvasPanX) / canvasZoom,
+      y: (sy - canvasPanY) / canvasZoom,
+    };
+  }
+
+  function canvasToScreen(cx, cy) {
+    return {
+      x: cx * canvasZoom + canvasPanX,
+      y: cy * canvasZoom + canvasPanY,
+    };
+  }
+
+  function updateZoomDisplay() {
+    const d = document.getElementById('zoomLevelDisplay');
+    if (d) d.textContent = Math.round(canvasZoom * 100) + '%';
+  }
+
+  function showZoomControls() {
+    const c = document.getElementById('zoomControls');
+    if (c) c.classList.add('visible');
+  }
+
+  function setCanvasTransform(panX, panY, zoom) {
+    canvasPanX = panX;
+    canvasPanY = panY;
+    canvasZoom = Math.max(0.1, Math.min(5, zoom));
+    const canvas = getCurrentCanvas();
+    if (canvas) {
+      canvas.panX = canvasPanX;
+      canvas.panY = canvasPanY;
+      canvas.zoom = canvasZoom;
+    }
+    applyCanvasTransform();
+  }
+
+  function initCanvasTransform() {
+    const canvas = getCurrentCanvas();
+    canvasPanX = canvas.panX || 0;
+    canvasPanY = canvas.panY || 0;
+    canvasZoom = canvas.zoom || 1;
+    applyCanvasTransform();
+  }
+
+  function zoomAtPoint(newZoom, centerX, centerY) {
+    const clamped = Math.max(0.1, Math.min(5, newZoom));
+    const scale = clamped / canvasZoom;
+    const newPanX = centerX - (centerX - canvasPanX) * scale;
+    const newPanY = centerY - (centerY - canvasPanY) * scale;
+    setCanvasTransform(newPanX, newPanY, clamped);
+  }
+
+  function startCanvasPan(clientX, clientY) {
+    isPanning = true;
+    panStartX = clientX;
+    panStartY = clientY;
+    panStartPanX = canvasPanX;
+    panStartPanY = canvasPanY;
+    const vp = getCanvasViewport();
+    if (vp) vp.classList.add('panning');
+  }
+
+  function doCanvasPan(clientX, clientY) {
+    if (!isPanning) return;
+    const dx = clientX - panStartX;
+    const dy = clientY - panStartY;
+    setCanvasTransform(panStartPanX + dx, panStartPanY + dy, canvasZoom);
+  }
+
+  function stopCanvasPan() {
+    isPanning = false;
+    const vp = getCanvasViewport();
+    if (vp) vp.classList.remove('panning');
+  }
+
   let dragState = null;
   let dragPending = null;
   const DRAG_THRESHOLD = 5;
-  const GRID_SIZE = 10;
+
   let SNAP_TO_GRID = false;
   let focusModeNoteId = null;
   let currentFindQuery = null;
@@ -7038,10 +7235,11 @@ def greet(name):
     const menu = document.getElementById('contextMenu');
     const canvas = getCurrentCanvas();
     const cx = e.clientX, cy = e.clientY;
+    const vpPos = screenToCanvas(cx, cy);
     const activeCount = notes.filter(n => !n.archived).length;
     menu.innerHTML = `
-      <div class="context-menu-item" data-action="simple" data-x="${cx}" data-y="${cy}"> New Simple Note</div>
-      <div class="context-menu-item" data-action="markdown" data-x="${cx}" data-y="${cy}"> New Markdown Note</div>
+      <div class="context-menu-item" data-action="simple" data-x="${vpPos.x}" data-y="${vpPos.y}"> New Simple Note</div>
+      <div class="context-menu-item" data-action="markdown" data-x="${vpPos.x}" data-y="${vpPos.y}"> New Markdown Note</div>
       <div class="context-menu-divider"></div>
       <div class="context-menu-item" data-action="auto-layout">Auto-Layout${activeCount ? ` (${activeCount} notes)` : ''}</div>
       <div class="context-menu-item" data-action="snap" style="font-weight: ${SNAP_TO_GRID ? 'bold' : 'normal'};"> Snap to Grid</div>
@@ -7049,6 +7247,12 @@ def greet(name):
       <div class="context-menu-item" data-action="export">Export Canvas to File</div> <!--\uD83D\uDCE4  -->
       <div class="context-menu-item" data-action="restore"> Restore Canvas </div> <!-- \uD83D\uDCC2 -->
       <div class="context-menu-item" data-action="share"> Share Canvas</div> <!-- \uD83D\uDD17 -->
+      <div class="context-menu-divider"></div>
+      <div class="context-menu-divider"></div>
+      <div class="context-menu-item" data-action="zoom-in">Zoom In (${Math.round(canvasZoom * 100)}%)</div>
+      <div class="context-menu-item" data-action="zoom-out"> Zoom Out</div>
+      <div class="context-menu-item" data-action="zoom-reset">Reset Zoom</div>
+      <div class="context-menu-item" data-action="zoom-fit">Zoom to Fit Notes</div>
       <div class="context-menu-divider"></div>
       <div class="context-menu-item" data-action="bg"> Change Background</div>
       <div class="context-menu-item" data-action="settings"> Settings</div>
@@ -7172,8 +7376,15 @@ def greet(name):
 
   function startNoteDrag(el, clientX, clientY) {
     bringNoteToFront(el);
-    const rect = el.getBoundingClientRect();
-    dragState = { type: 'move', el, startX: clientX, startY: clientY, origX: rect.left, origY: rect.top };
+    const vpPos = screenToCanvas(clientX, clientY);
+    dragState = {
+      type: 'move',
+      el,
+      startX: clientX,
+      startY: clientY,
+      origX: parseFloat(el.style.left) || 0,
+      origY: parseFloat(el.style.top) || 0,
+    };
     el.classList.add('dragging');
   }
 
@@ -7221,13 +7432,15 @@ def greet(name):
         if (e.target.closest('.gojs-container') || e.target.closest('canvas') || e.target.closest('.gojs-source') || e.target.closest('.chart-container') || e.target.closest('.chart-note-wrap')) return;
         if (e.button !== 0) return;
 
-        const rect = el.getBoundingClientRect();
+        const vpPos = screenToCanvas(e.clientX, e.clientY);
         dragPending = {
           el,
           startX: e.clientX,
           startY: e.clientY,
-          origX: rect.left,
-          origY: rect.top,
+          origVpX: vpPos.x,
+          origVpY: vpPos.y,
+          viewportOrigX: parseFloat(el.style.left) || 0,
+          viewportOrigY: parseFloat(el.style.top) || 0,
         };
       });
 
@@ -7237,11 +7450,12 @@ def greet(name):
           e.stopPropagation();
           bringNoteToFront(el);
           const rect = el.getBoundingClientRect();
+          const vpPos = screenToCanvas(rect.left, rect.top);
           dragState = {
             type: 'resize', dir: h.dataset.dir, el,
             startX: e.clientX, startY: e.clientY,
-            origW: rect.width, origH: rect.height,
-            origX: rect.left, origY: rect.top,
+            origW: rect.width / canvasZoom, origH: rect.height / canvasZoom,
+            origX: vpPos.x, origY: vpPos.y,
           };
           el.classList.add('resizing');
         });
@@ -7352,7 +7566,9 @@ def greet(name):
         });
       }
 
-      document.body.appendChild(el);
+      const vp = getCanvasViewport();
+      if (vp) vp.appendChild(el);
+      else document.body.appendChild(el);
     });
     renderMermaidDiagrams();
     initGojsDiagrams();
@@ -7370,8 +7586,8 @@ def greet(name):
     }
     if (!dragState) return;
     if (dragState.type === 'move') {
-      const dx = e.clientX - dragState.startX;
-      const dy = e.clientY - dragState.startY;
+      const dx = (e.clientX - dragState.startX) / canvasZoom;
+      const dy = (e.clientY - dragState.startY) / canvasZoom;
       let newX = dragState.origX + dx;
       let newY = dragState.origY + dy;
       if (SNAP_TO_GRID) {
@@ -7381,8 +7597,8 @@ def greet(name):
       dragState.el.style.left = newX + 'px';
       dragState.el.style.top = newY + 'px';
     } else if (dragState.type === 'resize') {
-      const dw = e.clientX - dragState.startX;
-      const dh = e.clientY - dragState.startY;
+      const dw = (e.clientX - dragState.startX) / canvasZoom;
+      const dh = (e.clientY - dragState.startY) / canvasZoom;
       const dir = dragState.dir;
       const MIN_W = 80, MIN_H = 50;
       let newW, newH, newX, newY;
@@ -8159,6 +8375,39 @@ def greet(name):
           const y = parseInt(item.dataset.y) - 20;
           const format = action === 'markdown' ? 'markdown' : 'plain';
           createNote(null, { format, startEditing: true, x, y });
+        } else if (action === 'zoom-in') {
+          zoomAtPoint(canvasZoom * 1.25, window.innerWidth / 2, window.innerHeight / 2);
+          showZoomControls();
+        } else if (action === 'zoom-out') {
+          zoomAtPoint(canvasZoom * 0.8, window.innerWidth / 2, window.innerHeight / 2);
+          showZoomControls();
+        } else if (action === 'zoom-reset') {
+          setCanvasTransform(0, 0, 1);
+          showZoomControls();
+        } else if (action === 'zoom-fit') {
+          const active = notes.filter(n => !n.archived);
+          if (active.length) {
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+            active.forEach(n => {
+              if (n.x < minX) minX = n.x;
+              if (n.y < minY) minY = n.y;
+              if (n.x + (n.w || 220) > maxX) maxX = n.x + (n.w || 220);
+              if (n.y + (n.h || 180) > maxY) maxY = n.y + (n.h || 180);
+            });
+            const pad = 60;
+            minX -= pad; minY -= pad; maxX += pad; maxY += pad;
+            const boundsW = maxX - minX;
+            const boundsH = maxY - minY;
+            const zoomX = window.innerWidth / boundsW;
+            const zoomY = window.innerHeight / boundsH;
+            const fitZoom = Math.min(zoomX, zoomY, 2);
+            const centerX = (minX + maxX) / 2;
+            const centerY = (minY + maxY) / 2;
+            const panX = window.innerWidth / 2 - centerX * fitZoom;
+            const panY = window.innerHeight / 2 - centerY * fitZoom;
+            setCanvasTransform(panX, panY, fitZoom);
+          }
+          showZoomControls();
         } else if (action === 'bg') {
           if (!sidebarOpen) openSidebar('notes');
           setTimeout(() => openColorPalette(currentCanvasId), 150);
@@ -8412,6 +8661,24 @@ def greet(name):
       clearFindHighlights();
       return;
     }
+    if ((e.ctrlKey || e.metaKey) && (e.key === '=' || e.key === '+')) {
+      e.preventDefault();
+      zoomAtPoint(canvasZoom * 1.25, window.innerWidth / 2, window.innerHeight / 2);
+      showZoomControls();
+      return;
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key === '-') {
+      e.preventDefault();
+      zoomAtPoint(canvasZoom * 0.8, window.innerWidth / 2, window.innerHeight / 2);
+      showZoomControls();
+      return;
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key === '0') {
+      e.preventDefault();
+      setCanvasTransform(0, 0, 1);
+      showZoomControls();
+      return;
+    }
     if (e.key === 'Escape' && focusModeNoteId) {
       exitFocusMode();
       return;
@@ -8461,29 +8728,93 @@ def greet(name):
   renderStickyNotes();
   setTimeout(() => refreshAllApis(), 500);
 
-  const canvasBg = document.getElementById('random-bg');
-  canvasBg.addEventListener('dragover', (e) => {
-    if (e.dataTransfer.types.includes('Files')) {
-      e.preventDefault();
-      e.dataTransfer.dropEffect = 'copy';
-    }
-  });
-  canvasBg.addEventListener('drop', (e) => {
-    e.preventDefault();
-    const files = e.dataTransfer.files;
-    for (const file of files) {
-      if (file.type.startsWith('image/')) {
-        const rect = canvasBg.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        
-        const reader = new FileReader();
-        reader.onload = (ev) => { createImageNote(ev.target.result, x, y); };
-        reader.readAsDataURL(file);
-        return;
+  const canvasViewport = document.getElementById('canvasViewport');
+  if (canvasViewport) {
+    canvasViewport.addEventListener('dragover', (e) => {
+      if (e.dataTransfer.types.includes('Files')) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'copy';
       }
+    });
+    canvasViewport.addEventListener('drop', (e) => {
+      e.preventDefault();
+      const files = e.dataTransfer.files;
+      for (const file of files) {
+        if (file.type.startsWith('image/')) {
+          const vpPos = screenToCanvas(e.clientX, e.clientY);
+          const reader = new FileReader();
+          reader.onload = (ev) => { createImageNote(ev.target.result, vpPos.x, vpPos.y); };
+          reader.readAsDataURL(file);
+          return;
+        }
+      }
+    });
+    canvasViewport.addEventListener('mousedown', (e) => {
+      if (e.target !== canvasViewport) return;
+      if (e.button !== 0) return;
+      e.preventDefault();
+      startCanvasPan(e.clientX, e.clientY);
+    });
+    canvasViewport.addEventListener('mouseenter', () => {
+      showZoomControls();
+      clearTimeout(canvasViewport._zoomHideTimer);
+    });
+    canvasViewport.addEventListener('mouseleave', () => {
+      canvasViewport._zoomHideTimer = setTimeout(() => {
+        const zc = document.getElementById('zoomControls');
+        if (zc) zc.classList.remove('visible');
+      }, 1500);
+    });
+  }
+
+  document.addEventListener('mousemove', (e) => {
+    if (isPanning) {
+      doCanvasPan(e.clientX, e.clientY);
     }
   });
+
+  document.addEventListener('mouseup', (e) => {
+    if (isPanning) {
+      stopCanvasPan();
+    }
+  });
+
+  canvasViewport?.addEventListener('wheel', (e) => {
+    if (e.ctrlKey || e.metaKey) {
+      e.preventDefault();
+      const delta = -e.deltaY * 0.001;
+      const newZoom = Math.max(0.1, Math.min(5, canvasZoom * (1 + delta)));
+      zoomAtPoint(newZoom, e.clientX, e.clientY);
+      showZoomControls();
+      clearTimeout(canvasViewport._zoomHideTimer);
+      canvasViewport._zoomHideTimer = setTimeout(() => {
+        const zc = document.getElementById('zoomControls');
+        if (zc) zc.classList.remove('visible');
+      }, 2000);
+    }
+  }, { passive: false });
+
+  document.getElementById('zoomControls')?.addEventListener('click', (e) => {
+    const btn = e.target.closest('.zoom-btn');
+    if (!btn) return;
+    const action = btn.dataset.zoom;
+    if (action === 'in') {
+      zoomAtPoint(canvasZoom * 1.25, window.innerWidth / 2, window.innerHeight / 2);
+    } else if (action === 'out') {
+      zoomAtPoint(canvasZoom * 0.8, window.innerWidth / 2, window.innerHeight / 2);
+    } else if (action === 'reset') {
+      setCanvasTransform(0, 0, 1);
+    }
+    showZoomControls();
+    clearTimeout(canvasViewport?._zoomHideTimer);
+    const timer = setTimeout(() => {
+      const zc = document.getElementById('zoomControls');
+      if (zc) zc.classList.remove('visible');
+    }, 2000);
+    if (canvasViewport) canvasViewport._zoomHideTimer = timer;
+  });
+
+  initCanvasTransform();
 
   const savedTheme = localStorage.getItem('theme');
   if (savedTheme === 'dark') {
