@@ -108,6 +108,7 @@
     }
 
     .sidebar-add-btn {
+      flex-shrink: 0;
       margin: 0.5rem 0.75rem 0.75rem;
       padding: 0.55rem;
       border-radius: 0.5rem;
@@ -662,8 +663,8 @@
 
     .fullscreen-btn {
       position: absolute;
-      top: 1.25rem;
-      right: 3.75rem;
+      top: 4rem;
+      right: 1.25rem;
       background: rgba(255, 255, 255, 0.06);
       border: 1px solid rgba(255, 255, 255, 0.08);
       color: #a0a0b8;
@@ -725,14 +726,14 @@
     .sidebar-toggle {
       position: fixed;
       top: 0.75rem;
-      left: 0.75rem;
+      left: calc(240px - 18px);
       z-index: 400;
       background: rgba(28, 28, 36, 0.9);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(28, 28, 36, 0.9);
       color: #c0c0d0;
       width: 36px;
       height: 36px;
-      border-radius: 50%;
+      border-radius: 8px;
       cursor: pointer;
       font-size: 1rem;
       backdrop-filter: blur(8px);
@@ -740,9 +741,9 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: background 0.2s, opacity 0.3s ease;
-      opacity: 0;
-      pointer-events: none;
+      transition: left 0.3s ease, background 0.2s;
+      opacity: 1;
+      pointer-events: auto;
     }
 
     .sidebar-toggle:hover {
@@ -751,8 +752,7 @@
     }
 
     .sidebar.collapsed ~ .sidebar-toggle {
-      opacity: 1;
-      pointer-events: auto;
+      left: -1rem;
     }
 
     .modal-overlay {
