@@ -559,7 +559,7 @@
 
     .dots {
       position: absolute;
-      bottom: 2.5rem;
+      bottom: 1.5rem;
       left: 50%;
       transform: translateX(-50%);
       display: flex;
@@ -654,37 +654,25 @@
     }
 
     .fallback-msg .fallback-box {
-      border: 2px dashed rgba(107, 114, 128, 0.25);
-      border-radius: 1rem;
-      padding: 2.5rem 3rem;
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 0.5rem;
-      background: rgba(107, 114, 128, 0.04);
     }
 
-    .fallback-msg .fallback-box .fb-icon {
-      font-size: 1.75rem;
-      opacity: 0.25;
-      line-height: 1;
-      margin-bottom: 0.25rem;
-      filter: grayscale(1);
-    }
-
-    .fallback-msg .fallback-box .fb-title {
-      font-size: 1.1rem;
-      color: #6b7280;
+    .fallback-msg .fallback-box .fb-num {
+      font-size: 3rem;
+      color: #d4d4d7;
+      line-height: 1.1;
       font-weight: 500;
-      letter-spacing: 0.01em;
     }
 
-    .fallback-msg .fallback-box .fb-text {
-      font-size: 0.8rem;
-      color: #4b5563;
+    .fallback-msg .fallback-box .fb-label {
+      font-size: 0.85rem;
+      color: #d4d4d7;
       text-align: center;
       line-height: 1.5;
-      max-width: 220px;
+      max-width: 240px;
     }
 
     .sidebar-toggle {
@@ -981,7 +969,7 @@
         <button data-mode="fill">Fill</button>
         <button data-mode="original">Original</button>
       </div>
-      <div class="fallback-msg"><div class="fallback-box"><div class="fb-icon">&#x1F5BC;</div><div class="fb-title">No Image</div><div class="fb-text">This slide has no image yet.<br>Click the settings button above<br>to add an image URL.</div></div></div>
+      <div class="fallback-msg"><div class="fallback-box"><div class="fb-num">Slide Number 1</div><div class="fb-label">Import image or paste from clipboard</div></div></div>
       <span class="slide-label">Slide 1</span>
       <span class="slide-number">1 / 1</span>
     </div>
@@ -1552,7 +1540,7 @@
           '<button data-mode="fill">Fill</button>' +
           '<button data-mode="original">Original</button>' +
         '</div>' +
-        '<div class="fallback-msg"><div class="fallback-box"><div class="fb-icon">\uD83D\uDDBC\uFE0F</div><div class="fb-title">No Image</div><div class="fb-text">This slide has no image yet.<br>Click the settings button above<br>to add an image URL.</div></div></div>' +
+        '<div class="fallback-msg"><div class="fallback-box"><div class="fb-num">Slide Number ' + (idx + 1) + '</div><div class="fb-label">Import image or paste from clipboard</div></div></div>' +
         '<span class="slide-label">Slide ' + (idx + 1) + '</span>' +
         '<span class="slide-number">' + (idx + 1) + ' / ' + (idx + 1) + '</span>';
       container.appendChild(slide);
@@ -1628,6 +1616,8 @@
 
       slides.forEach((el, i) => {
         el.querySelector('.slide-number').textContent = (i + 1) + ' / ' + total;
+        const fbNum = el.querySelector('.fb-num');
+        if (fbNum) fbNum.textContent = 'Slide Number ' + (i + 1);
       });
 
       const items = thumbnails.querySelectorAll('.thumb-item');
@@ -1846,6 +1836,35 @@
       if (e.key === 'Escape') { e.preventDefault(); settingsBtn.click(); }
     });
 
+    document.addEventListener('paste', (e) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      let imgItem = null;
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.startsWith('image/')) { imgItem = items[i]; break; }
+      }
+      if (!imgItem) return;
+      e.preventDefault();
+      const selIdx = getSelectedImgIdx();
+      const idx = selIdx >= 0 ? selIdx : current;
+      if (idx < 0 || idx >= slides.length) return;
+      const file = imgItem.getAsFile();
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        slideUrls[idx] = ev.target.result;
+        delete resizeData[idx];
+        delete slideMode[idx];
+        const wrap = slides[idx].querySelector('.slide-img-wrap');
+        if (wrap) wrap.classList.remove('selected');
+        applySlideImage(slides[idx], ev.target.result);
+        saveToStorage();
+        rebuildThumbnails();
+        update();
+      };
+      reader.readAsDataURL(file);
+    });
+
     container.addEventListener('click', (e) => {
       if (e.target.closest('.nav-arrow') || e.target.closest('.dot') || e.target.closest('.settings-btn')) return;
     });
@@ -1868,13 +1887,13 @@
           '<div class="resize-handle sw"></div>' +
           '<div class="resize-handle w"></div>' +
         '</div>' +
-        '<div class="img-props" data-slide="' + idx + '">' +
+        '<div class="img-props" data-slide="' + i + '">' +
           '<button data-mode="cover">Cover</button>' +
           '<button data-mode="contain">Contain</button>' +
           '<button data-mode="fill">Fill</button>' +
           '<button data-mode="original">Original</button>' +
         '</div>' +
-        '<div class="fallback-msg"><div class="fallback-box"><div class="fb-icon">\uD83D\uDDBC\uFE0F</div><div class="fb-title">No Image</div><div class="fb-text">This slide has no image yet.<br>Click the settings button above<br>to add an image URL.</div></div></div>' +
+        '<div class="fallback-msg"><div class="fallback-box"><div class="fb-num">Slide Number ' + (i + 1) + '</div><div class="fb-label">Import image or paste from clipboard</div></div></div>' +
         '<span class="slide-label">Slide ' + (i + 1) + '</span>' +
         '<span class="slide-number">' + (i + 1) + ' / ' + savedCount + '</span>';
       container.appendChild(slide);
