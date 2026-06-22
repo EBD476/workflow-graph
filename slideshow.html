@@ -264,6 +264,53 @@
       opacity: 0.9;
     }
 
+    .ctx-menu {
+      position: fixed;
+      z-index: 700;
+      background: #1c1c24;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 0.6rem;
+      padding: 0.3rem 0;
+      min-width: 160px;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+      display: none;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    .ctx-menu.show {
+      display: block;
+    }
+
+    .ctx-item {
+      padding: 0.45rem 1rem;
+      font-size: 0.82rem;
+      color: #c0c0d0;
+      cursor: pointer;
+      transition: background 0.15s;
+      white-space: nowrap;
+    }
+
+    .ctx-item:hover {
+      background: rgba(255, 255, 255, 0.06);
+      color: #fff;
+    }
+
+    .ctx-divider {
+      height: 1px;
+      background: rgba(255, 255, 255, 0.06);
+      margin: 0.25rem 0;
+    }
+
+    .ctx-submenu {
+      display: none;
+      padding-left: 0.5rem;
+    }
+
+    .ctx-submenu.show {
+      display: block;
+    }
+
     .drop-placeholder {
       height: 4px;
       margin: 2px 0;
@@ -1009,6 +1056,22 @@
   </div>
 </div>
 
+<div class="ctx-menu" id="ctxMenu">
+  <div class="ctx-item" data-action="set-url">Set Image URL</div>
+  <div class="ctx-item" data-action="remove">Remove Image</div>
+  <div class="ctx-divider"></div>
+  <div class="ctx-item ctx-sub" data-action="fit">Fit Mode</div>
+  <div class="ctx-submenu" id="ctxFitSub">
+    <div class="ctx-item" data-action="fit-cover">Cover</div>
+    <div class="ctx-item" data-action="fit-contain">Contain</div>
+    <div class="ctx-item" data-action="fit-fill">Fill</div>
+    <div class="ctx-item" data-action="fit-original">Original</div>
+  </div>
+  <div class="ctx-divider"></div>
+  <div class="ctx-item" data-action="copy">Copy Image</div>
+  <div class="ctx-item" data-action="paste">Paste Image</div>
+</div>
+
 <script>
   (function () {
     const container = document.getElementById('slideshow');
@@ -1032,6 +1095,10 @@
     const confirmMsg = document.getElementById('confirmMsg');
     const confirmCancel = document.getElementById('confirmCancel');
     const confirmDelete = document.getElementById('confirmDelete');
+    const ctxMenu = document.getElementById('ctxMenu');
+    const ctxFitSub = document.getElementById('ctxFitSub');
+
+    let ctxSlideIdx = -1;
 
     let current = 0;
     let slideUrls = {};
@@ -1060,9 +1127,16 @@
 
     function saveToStorage() {
       try {
+        const persistUrls = {};
+        for (const k in slideUrls) {
+          const v = slideUrls[k];
+          if (v && !v.startsWith('data:') && !v.startsWith('blob:')) {
+            persistUrls[k] = v;
+          }
+        }
         localStorage.setItem('slideData', JSON.stringify({
           count: slides.length,
-          urls: slideUrls,
+          urls: persistUrls,
           resize: resizeData,
           mode: slideMode
         }));
@@ -1833,7 +1907,10 @@
       if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
         e.preventDefault(); undoDelete();
       }
-      if (e.key === 'Escape') { e.preventDefault(); settingsBtn.click(); }
+      if (e.key === 'Escape') {
+        if (ctxMenu.classList.contains('show')) { hideCtxMenu(); }
+        else { e.preventDefault(); settingsBtn.click(); }
+      }
     });
 
     document.addEventListener('paste', (e) => {
@@ -1847,6 +1924,10 @@
       e.preventDefault();
       const selIdx = getSelectedImgIdx();
       const idx = selIdx >= 0 ? selIdx : current;
+      pasteImageAt(idx, imgItem);
+    });
+
+    function pasteImageAt(idx, imgItem) {
       if (idx < 0 || idx >= slides.length) return;
       const file = imgItem.getAsFile();
       if (!file) return;
@@ -1863,6 +1944,92 @@
         update();
       };
       reader.readAsDataURL(file);
+    }
+
+    container.addEventListener('contextmenu', (e) => {
+      const slideEl = e.target.closest('.slide');
+      if (!slideEl) return;
+      e.preventDefault();
+      ctxSlideIdx = parseInt(slideEl.dataset.slide);
+      ctxMenu.style.left = e.clientX + 'px';
+      ctxMenu.style.top = e.clientY + 'px';
+      ctxMenu.classList.add('show');
+      ctxFitSub.classList.remove('show');
+    });
+
+    function hideCtxMenu() {
+      ctxMenu.classList.remove('show');
+      ctxFitSub.classList.remove('show');
+      ctxSlideIdx = -1;
+    }
+
+    ctxMenu.addEventListener('click', (e) => {
+      const item = e.target.closest('.ctx-item');
+      if (!item) return;
+      const action = item.dataset.action;
+      const idx = ctxSlideIdx;
+      if (idx < 0 || idx >= slides.length) { hideCtxMenu(); return; }
+      const slideEl = slides[idx];
+      const hasImg = !!slideUrls[idx];
+      switch (action) {
+        case 'set-url':
+          openSettings();
+          break;
+        case 'remove':
+          if (hasImg) {
+            delete slideUrls[idx];
+            delete resizeData[idx];
+            delete slideMode[idx];
+            const wrap = slideEl.querySelector('.slide-img-wrap');
+            if (wrap) wrap.classList.remove('selected');
+            applySlideImage(slideEl, '');
+            saveToStorage();
+            rebuildThumbnails();
+          }
+          break;
+        case 'fit-cover':
+        case 'fit-contain':
+        case 'fit-fill':
+        case 'fit-original':
+          if (hasImg) {
+            const mode = action.replace('fit-', '');
+            slideMode[idx] = mode;
+            const img = slideEl.querySelector('.slide-img-wrap img');
+            applyMode(img, idx);
+            saveToStorage();
+          }
+          break;
+        case 'copy':
+          if (hasImg) {
+            navigator.clipboard.writeText(slideUrls[idx]).catch(() => {});
+          }
+          break;
+        case 'paste':
+          navigator.clipboard.read().then(clipboardItems => {
+            for (const ci of clipboardItems) {
+              for (const type of ci.types) {
+                if (type.startsWith('image/')) {
+                  ci.getType(type).then(blob => {
+                    const fakeItem = { getAsFile: () => blob };
+                    pasteImageAt(idx, fakeItem);
+                  });
+                  return;
+                }
+              }
+            }
+          }).catch(() => {});
+          break;
+      }
+      hideCtxMenu();
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.ctx-menu')) hideCtxMenu();
+    });
+
+    ctxMenu.querySelector('.ctx-sub').addEventListener('click', (e) => {
+      e.stopPropagation();
+      ctxFitSub.classList.toggle('show');
     });
 
     container.addEventListener('click', (e) => {
